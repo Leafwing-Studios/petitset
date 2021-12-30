@@ -1,5 +1,5 @@
 mod tests {
-    use petitset_lib::set::*;
+    use petitset::set::*;
 
     #[test]
     fn equality_ignores_order() {

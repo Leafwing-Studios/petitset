@@ -20,6 +20,3 @@ members = ["./", "tools/ci"]
 [dev-dependencies]
 criterion = "0.3"
 
-[lib]
-name = "petitset_lib"
-path = "src/lib.rs"
