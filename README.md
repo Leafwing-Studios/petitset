@@ -1,48 +1,18 @@
 # About
 
-This is the Leafwing Studios' template repo, providing a quick, opinionated base for high-quality Bevy game projects (and libraries).
-We've shaved the yaks for you!
+An array-backed ordered set data structure in Rust, optimized for stack-allocated storage of a tiny number of elements with a fixed cap.
 
-The licenses here are provided for template purposes: this repository itself is provided under MIT-0.
-Feel free to use, hack and adopt this freely: no attribution needed.
+This crate is designed to be used in performance-sensitive contexts with a small number of elements, where iteration is more common than look-ups and you don't mind a fixed size.
+One particularly useful quirk is that elements are not recompacted upon removal: this can be very useful when replacing elements in a set or using the indexes that the elements are stored at in a semantic fashion.
+Iteration order is guaranteed to be stable, on a first-in-first-out basis.
 
-## Instructions
+If this isn't what you're after, check out one of these alternatives!
 
-### Getting started
-
-[Use this template](https://github.com/Leafwing-Studios/template-repo/generate) by pressing the big green "Use this template" button in the top right corner of [this repo](https://github.com/Leafwing-Studios/template-repo) to create a new repository.
-
-This repository has dynamic linking enabled for much faster incremental compile times.
-If you're on Windows, you'll need to use the `nightly` Rust compiler.
-Swap by using `rustup default nightly`.
-
-If you are making a game:
-
-1. Enable the features you need from Bevy in `Cargo.toml`.
-2. Delete the `examples` folder.
-3. Start writing your game. Your logic should be stored in `lib.rs` (and other files that are pulled in from it).
-Then, add all of the plugins and build your `App` in `main.rs`.
-4. If you only care about your game working on `nightly`, remove `stable` from the `toolchain` field in `.github/workflows/ci.yml`.
-
-If you are making a standalone library:
-
-1. Delete `main.rs` and the `[[bin]]` section of the top-level `Cargo.toml`.
-2. Disable `bevy` features: change `default-features` to `false` and disable the `dynamic` feature. This avoids unnecessarily pulling in extra features for your users.
-
-Finally:
-
-1. Rename the lib and bin in `Cargo.toml` (and all imports to ensure your code compiles).
-2. Double check that the LICENSE matches your intent.
-3. Update this README to match your project, modifying `About`, `Getting Started` and other sections as needed.
-4. Consider cleaning up the issue and PR templates found in the `.github` folder to better match your needs.
-
-### Running your game
-
-Use `cargo run`.
-This repo is set up to always build with full optimizations, so there's no need for a `--release` flag in most cases.
-Dynamic linking is enabled to ensure build times stay snappy.
-
-To run an example, use `cargo run --example_name`, where `example_name` is the file name of the example without the `.rs` extension.
+- [smolset](https://crates.io/crates/smolset): automatically converts to a `HashSet` when the number of elements is too large. Unordered.
+- [array_map](https://docs.rs/array_map/latest/array_map/index.html): Blazing fast, fixed size. All possible keys must be known statically.
+- [sparseset](https://github.com/bombela/sparseset): Heap-allocated, great for sparse data and frequent iteration. Stable order!
+- [HashSet](https://doc.rust-lang.org/std/collections/struct.HashSet.html): Heap-allocated, unordered, requires `Hash`, unbounded size.
+- [BTreeSet](https://doc.rust-lang.org/stable/std/collections/struct.BTreeSet.html): Heap-allocated, ordered, requires `Ord`, unbounded size.
 
 ## Contributing
 
@@ -94,9 +64,3 @@ Use `cargo doc --open` to build and then open the docs.
 
 Design docs (or other book-format documentation) is handled with [mdBook](https://rust-lang.github.io/mdBook/index.html).
 Install it with `cargo install mdbook`, then use `mdbook serve --open` to launch the docs.
-
-### Benchmarking
-
-To run the benchmarks, use `cargo bench`.
-
-For more documentation on making your own benchmarks, check out [criterion's docs](https://bheisler.github.io/criterion.rs/book/index.html).

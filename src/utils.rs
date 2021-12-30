@@ -1,22 +1,11 @@
-/// Returns true!
-///
-/// A useless function used for testing that CI works.
-///
-/// # Examples
-/// ```
-/// # use template_lib::utils::returns_true;
-/// assert!(returns_true());
-/// ```
-pub fn returns_true() -> bool {
-    true
-}
+use crate::set::PetitSet;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn template_unit_test() {
-        assert!(returns_true());
+impl<T: PartialEq + Clone + Copy + Ord, const CAP: usize> PetitSet<T, CAP> {
+    /// Is this set sorted when iterated over?
+    pub fn is_sorted(&self) -> bool {
+        let vec: Vec<T> = self.into_iter().collect();
+        let mut sorted_vec = vec.clone();
+        sorted_vec.sort();
+        vec == sorted_vec
     }
 }
