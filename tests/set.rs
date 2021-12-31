@@ -1,118 +1,118 @@
-mod tests {
-    use petitset::set::*;
-    use petitset::InsertionError;
+mod predicates;
+use predicates::is_sorted;
 
-    #[test]
-    fn reject_duplicates() {
-        let mut set: PetitSet<u8, 4> = PetitSet::default();
-        assert!(set.is_empty());
+use petitset::{InsertionError, PetitSet};
 
-        set.insert(1);
-        assert!(set.len() == 1);
+#[test]
+fn reject_duplicates() {
+    let mut set: PetitSet<u8, 4> = PetitSet::default();
+    assert!(set.is_empty());
 
-        set.insert(1);
-        assert!(set.len() == 1);
+    set.insert(1);
+    assert!(set.len() == 1);
 
-        let result = set.try_insert(1);
-        assert_eq!(result, Err(InsertionError::Duplicate(0)));
-        assert!(set.len() == 1);
+    set.insert(1);
+    assert!(set.len() == 1);
 
-        set.insert_at(1, 0);
-        assert!(set.len() == 1);
+    let result = set.try_insert(1);
+    assert_eq!(result, Err(InsertionError::Duplicate(0)));
+    assert!(set.len() == 1);
 
-        set.insert_at(1, 1);
-        assert!(set.len() == 1);
-    }
+    set.insert_at(1, 0);
+    assert!(set.len() == 1);
 
-    #[test]
-    fn reject_overfull() {
-        let mut set: PetitSet<u8, 2> = PetitSet::default();
+    set.insert_at(1, 1);
+    assert!(set.len() == 1);
+}
 
-        set.insert_multiple(1..=2);
-        assert!(set.len() == set.capacity());
+#[test]
+fn reject_overfull() {
+    let mut set: PetitSet<u8, 2> = PetitSet::default();
 
-        // Duplicates do not overflow
-        let duplicate_result = set.try_insert(2);
-        assert_eq!(duplicate_result, Err(InsertionError::Duplicate(1)));
-        assert!(set.len() == set.capacity());
+    set.insert_multiple(1..=2);
+    assert!(set.len() == set.capacity());
 
-        // Non-duplicates fail to insert
-        let overfull_result = set.try_insert(3);
-        assert_eq!(overfull_result, Err(InsertionError::Overfull));
-        assert!(set.len() == set.capacity());
-    }
+    // Duplicates do not overflow
+    let duplicate_result = set.try_insert(2);
+    assert_eq!(duplicate_result, Err(InsertionError::Duplicate(1)));
+    assert!(set.len() == set.capacity());
 
-    #[test]
-    #[should_panic]
-    fn panic_on_overfull_insertion() {
-        let mut set: PetitSet<u8, 2> = PetitSet::default();
+    // Non-duplicates fail to insert
+    let overfull_result = set.try_insert(3);
+    assert_eq!(overfull_result, Err(InsertionError::Overfull));
+    assert!(set.len() == set.capacity());
+}
 
-        set.insert_multiple(1..=2);
-        assert!(set.len() == set.capacity());
+#[test]
+#[should_panic]
+fn panic_on_overfull_insertion() {
+    let mut set: PetitSet<u8, 2> = PetitSet::default();
 
-        set.insert(3);
-    }
+    set.insert_multiple(1..=2);
+    assert!(set.len() == set.capacity());
 
-    #[test]
-    fn in_order_iteration() {
-        let mut set: PetitSet<u8, 8> = PetitSet::default();
-        set.insert_multiple(0..8);
-        assert!(set.is_sorted());
+    set.insert(3);
+}
 
-        set.remove_at(3);
-        assert!(set.is_sorted());
+#[test]
+fn in_order_iteration() {
+    let mut set: PetitSet<u8, 8> = PetitSet::default();
+    set.insert_multiple(0..8);
+    assert!(is_sorted(&set));
 
-        set.remove(&5);
-        assert!(set.is_sorted());
+    set.remove_at(3);
+    assert!(is_sorted(&set));
 
-        set.remove_at(0);
-        assert!(set.is_sorted());
+    set.remove(&5);
+    assert!(is_sorted(&set));
 
-        set.remove_at(7);
-        assert!(set.is_sorted());
+    set.remove_at(0);
+    assert!(is_sorted(&set));
 
-        let mut backwards_set: PetitSet<u8, 8> = PetitSet::default();
-        backwards_set.insert_multiple((0..8).rev());
-        assert!(!backwards_set.is_sorted());
-    }
+    set.remove_at(7);
+    assert!(is_sorted(&set));
 
-    #[test]
-    fn equality_ignores_order() {
-        let mut set_1: PetitSet<u8, 16> = PetitSet::default();
-        set_1.insert_multiple(7..=11);
+    let mut backwards_set: PetitSet<u8, 8> = PetitSet::default();
+    backwards_set.insert_multiple((0..8).rev());
+    assert!(!is_sorted(&backwards_set));
+}
 
-        let set_2: PetitSet<u8, 16> = PetitSet::from_iter((7..=11).rev());
-        assert_eq!(set_1, set_2);
-    }
+#[test]
+fn equality_ignores_order() {
+    let mut set_1: PetitSet<u8, 16> = PetitSet::default();
+    set_1.insert_multiple(7..=11);
 
-    #[test]
-    fn removal_returns_items() {
-        let mut set: PetitSet<u8, 8> = PetitSet::default();
-        set.insert_multiple(0..8);
+    let set_2: PetitSet<u8, 16> = PetitSet::from_iter((7..=11).rev());
+    assert_eq!(set_1, set_2);
+}
 
-        let index = set.remove(&3).unwrap();
-        assert_eq!(index, 3);
+#[test]
+fn removal_returns_items() {
+    let mut set: PetitSet<u8, 8> = PetitSet::default();
+    set.insert_multiple(0..8);
 
-        let value = set.remove_at(5).unwrap();
-        assert_eq!(value, 5);
-    }
+    let index = set.remove(&3).unwrap();
+    assert_eq!(index, 3);
 
-    #[test]
-    fn remove_and_insert_in_same_place() {
-        let mut set: PetitSet<u8, 8> = PetitSet::default();
-        set.insert_multiple(0..8);
-        assert!(set.is_sorted());
+    let value = set.remove_at(5).unwrap();
+    assert_eq!(value, 5);
+}
 
-        set.remove(&3);
-        assert!(set.is_sorted());
+#[test]
+fn remove_and_insert_in_same_place() {
+    let mut set: PetitSet<u8, 8> = PetitSet::default();
+    set.insert_multiple(0..8);
+    assert!(is_sorted(&set));
 
-        set.insert(3);
-        assert!(set.is_sorted());
+    set.remove(&3);
+    assert!(is_sorted(&set));
 
-        set.remove_at(5);
-        assert!(set.get_at(5).is_none());
+    set.insert(3);
+    assert!(is_sorted(&set));
 
-        set.insert_at(5, 5);
-        assert!(set.is_sorted());
-    }
+    set.remove_at(5);
+    assert!(set.get_at(5).is_none());
+
+    set.insert_at(5, 5);
+    assert!(is_sorted(&set));
 }

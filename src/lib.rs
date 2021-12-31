@@ -4,13 +4,13 @@
 //! One particularly useful quirk is that elements are not recompacted upon removal: this can be very useful when replacing elements in a set or using the indexes that the elements are stored at in a semantic fashion.
 //! Iteration order is guaranteed to be stable, on a first-in-first-out basis.
 
+#![no_std]
 #![deny(missing_docs)]
 
-pub mod map;
-pub mod set;
-pub mod utils;
-
+mod map;
 pub use map::PetitMap;
+
+mod set;
 pub use set::PetitSet;
 
 /// An error returned when attempting to insert into a [`PetitSet`] or [`PetitMap`]
