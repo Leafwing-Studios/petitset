@@ -22,12 +22,12 @@ use crate::set::PetitSet;
 /// The maximum size of this type is given by the const-generic type parameter `CAP`.
 /// Keys are guaranteed to be unique.
 #[derive(PartialEq, Clone, Copy, Debug)]
-pub struct PetitMap<K: PartialEq + Clone + Copy, V, const CAP: usize> {
+pub struct PetitMap<K: Eq + Copy, V, const CAP: usize> {
     keys: PetitSet<K, CAP>,
     values: [Option<V>; CAP],
 }
 
-impl<K: PartialEq + Clone + Copy, V, const CAP: usize> PetitMap<K, V, CAP> {
+impl<K: Eq + Copy, V, const CAP: usize> PetitMap<K, V, CAP> {
     /// Returns a reference to the value corresponding to the key.
     ///
     /// Returns `Some(&V)` if the key is found
