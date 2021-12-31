@@ -71,7 +71,7 @@ mod tests {
         assert!(set.is_sorted());
 
         let mut backwards_set: PetitSet<u8, 8> = PetitSet::default();
-        backwards_set.insert_multiple(8..0);
+        backwards_set.insert_multiple((0..8).rev());
         assert!(!backwards_set.is_sorted());
     }
 
@@ -80,7 +80,7 @@ mod tests {
         let mut set_1: PetitSet<u8, 16> = PetitSet::default();
         set_1.insert_multiple(7..=11);
 
-        let set_2: PetitSet<u8, 16> = PetitSet::from_iter(11..=7);
+        let set_2: PetitSet<u8, 16> = PetitSet::from_iter((7..=11).rev());
         assert_eq!(set_1, set_2);
     }
 
