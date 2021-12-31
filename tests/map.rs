@@ -14,7 +14,7 @@ fn lookup() {
 
     assert_eq!(*map.get(&1).unwrap(), 11);
     assert_eq!(*map.get_mut(&3).unwrap(), 31);
-    assert_eq!(map.get_at(2).unwrap(), (4, 41));
+    assert_eq!(map.get_at(2).unwrap(), (&4, &41));
     assert_eq!(map.get_at_mut(3).unwrap(), (&mut 2, &mut 21));
 }
 
@@ -33,16 +33,16 @@ fn removal() {
     // Overwriting insertion
     map.insert(3, 33);
 
-    let removed = map.remove(&3);
-    assert_eq!(removed, Some((1, 33)));
+    let removed = map.take(&3);
+    assert_eq!(removed, Some((1, (3, 33))));
     assert_eq!(map.find(&3), None);
 
-    let removed_at = map.remove_at(0);
+    let removed_at = map.take_at(0);
     assert_eq!(removed_at, Some((1, 11)));
     assert_eq!(map.find(&1), None);
 
     let failed_remove = map.remove_at(0);
-    assert_eq!(failed_remove, None);
+    assert_eq!(failed_remove, false);
 }
 
 #[test]

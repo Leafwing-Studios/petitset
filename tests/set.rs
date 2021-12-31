@@ -94,7 +94,7 @@ fn removal_returns_items() {
     let index = set.remove(&3).unwrap();
     assert_eq!(index, 3);
 
-    let value = set.remove_at(5).unwrap();
+    let value = set.take_at(5).unwrap();
     assert_eq!(value, 5);
 }
 

@@ -1,6 +1,7 @@
 //! A module for the [`PetitMap`] data structure
 use crate::set::PetitSet;
 use crate::InsertionError;
+use core::mem::swap;
 
 /// A map-like data structure with a fixed maximum size
 ///
@@ -24,13 +25,13 @@ use crate::InsertionError;
 ///
 /// The maximum size of this type is given by the const-generic type parameter `CAP`.
 /// Keys are guaranteed to be unique.
-#[derive(Clone, Copy, Debug, Eq)]
-pub struct PetitMap<K: Eq + Copy, V: Copy, const CAP: usize> {
+#[derive(Clone, Debug)]
+pub struct PetitMap<K: Eq, V, const CAP: usize> {
     keys: PetitSet<K, CAP>,
     values: [Option<V>; CAP],
 }
 
-impl<K: Eq + Copy, V: Copy, const CAP: usize> Default for PetitMap<K, V, CAP> {
+impl<K: Eq, V: Copy, const CAP: usize> Default for PetitMap<K, V, CAP> {
     fn default() -> Self {
         Self {
             keys: PetitSet::default(),
@@ -39,7 +40,7 @@ impl<K: Eq + Copy, V: Copy, const CAP: usize> Default for PetitMap<K, V, CAP> {
     }
 }
 
-impl<K: Eq + Copy, V: Copy, const CAP: usize> PetitMap<K, V, CAP> {
+impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
     /// Stores the value into the map, which can be looked up by the key
     ///
     /// Returns Ok(index) at which the key / value pair was inserted if succesful
@@ -117,12 +118,12 @@ impl<K: Eq + Copy, V: Copy, const CAP: usize> PetitMap<K, V, CAP> {
     ///
     /// # Panics
     /// Panics if the provided index is larger than CAP.
-    pub fn get_at(&self, index: usize) -> Option<(K, V)> {
+    pub fn get_at(&self, index: usize) -> Option<(&K, &V)> {
         assert!(index <= CAP);
 
         self.values[index]
             .as_ref()
-            .map(|value| (*self.keys.get_at(index).unwrap(), *value))
+            .map(|value| (*self.keys.get_at(index).as_ref().unwrap(), value))
     }
 
     /// Returns a mutable reference to the value at the provided index.
@@ -143,12 +144,36 @@ impl<K: Eq + Copy, V: Copy, const CAP: usize> PetitMap<K, V, CAP> {
 
     /// Removes the key-value pair from the map if the key is found
     ///
-    /// Returns `Some((index, V))` if it was found
-    pub fn remove(&mut self, key: &K) -> Option<(usize, V)> {
+    /// Returns `Some((index))` if it was found
+    pub fn remove(&mut self, key: &K) -> Option<usize> {
         if let Some(index) = self.find(key) {
             // We know this is valid, because we just found the right index
-            let (_key, value) = self.remove_at(index).unwrap();
-            Some((index, value))
+            self.remove_at(index);
+            Some(index)
+        } else {
+            None
+        }
+    }
+
+    /// Removes the element at the provided index
+    ///
+    /// Returns true if an element was found
+    ///
+    /// # Panics
+    /// Panics if the provided index is larger than CAP.
+    pub fn remove_at(&mut self, index: usize) -> bool {
+        self.take_at(index).is_some()
+    }
+
+    /// Removes and returns the key-value pair from the map if the key is found
+    ///
+    /// Returns `Some((index, (K,V)))` if it was found
+    #[must_use = "Use remove if the value is not needed."]
+    pub fn take(&mut self, key: &K) -> Option<(usize, (K, V))> {
+        if let Some(index) = self.find(key) {
+            let result = self.take_at(index).map(|pair| (index, pair));
+            debug_assert!(result.is_some());
+            result
         } else {
             None
         }
@@ -160,24 +185,25 @@ impl<K: Eq + Copy, V: Copy, const CAP: usize> PetitMap<K, V, CAP> {
     ///
     /// # Panics
     /// Panics if the provided index is larger than CAP.
-    pub fn remove_at(&mut self, index: usize) -> Option<(K, V)> {
+    #[must_use = "Use remove_at if the value is not needed."]
+    pub fn take_at(&mut self, index: usize) -> Option<(K, V)> {
         assert!(index <= CAP);
 
-        if let Some(key) = self.keys.remove_at(index) {
+        if let Some(key) = self.keys.take_at(index) {
+            let mut removed = None;
+            swap(&mut removed, &mut self.values[index]);
+
             // Every key must have a value:
             // if this panicked we had a malformed map
-            let value = self.values[index].unwrap();
-            self.values[index] = None;
-
-            Some((key, value))
+            Some((key, removed.unwrap()))
         } else {
             None
         }
     }
 
     /// An iterator visiting all keys in in a first-in, first-out order
-    pub fn keys(&self) -> impl Iterator<Item = K> {
-        self.keys.into_iter()
+    pub fn keys(&self) -> impl Iterator<Item = &K> {
+        self.keys.iter()
     }
 
     /// An iterator visiting all values in in a first-in, first-out order
@@ -195,7 +221,7 @@ impl<K: Eq + Copy, V: Copy, const CAP: usize> PetitMap<K, V, CAP> {
     }
 }
 
-impl<K: Eq + Copy, V: Copy, const CAP: usize> IntoIterator for PetitMap<K, V, CAP> {
+impl<K: Eq, V, const CAP: usize> IntoIterator for PetitMap<K, V, CAP> {
     type Item = (K, V);
     type IntoIter = PetitMapIter<K, V, CAP>;
     fn into_iter(self) -> Self::IntoIter {
@@ -207,19 +233,19 @@ impl<K: Eq + Copy, V: Copy, const CAP: usize> IntoIterator for PetitMap<K, V, CA
 }
 
 /// An [`Iterator`] struct for [`PetitMap`]
-#[derive(Default, Clone, Copy, Debug)]
-pub struct PetitMapIter<K: Eq + Copy, V: Copy, const CAP: usize> {
+#[derive(Clone, Debug)]
+pub struct PetitMapIter<K: Eq, V, const CAP: usize> {
     map: PetitMap<K, V, CAP>,
     cursor: usize,
 }
 
-impl<K: Eq + Copy, V: Copy, const CAP: usize> Iterator for PetitMapIter<K, V, CAP> {
+impl<K: Eq, V, const CAP: usize> Iterator for PetitMapIter<K, V, CAP> {
     type Item = (K, V);
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(index) = self.map.keys.next_filled_index(self.cursor) {
             self.cursor = index + 1;
-            self.map.get_at(index)
+            self.map.take_at(index)
         } else {
             self.cursor = CAP;
             None
@@ -227,10 +253,10 @@ impl<K: Eq + Copy, V: Copy, const CAP: usize> Iterator for PetitMapIter<K, V, CA
     }
 }
 
-impl<K: Eq + Copy, V: Copy + PartialEq, const CAP: usize> PartialEq for PetitMap<K, V, CAP> {
+impl<K: Eq, V: PartialEq, const CAP: usize> PartialEq for PetitMap<K, V, CAP> {
     fn eq(&self, other: &Self) -> bool {
         for key in self.keys() {
-            if self.get(&key) != other.get(&key) {
+            if self.get(key) != other.get(key) {
                 return false;
             }
         }

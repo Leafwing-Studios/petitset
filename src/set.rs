@@ -1,6 +1,7 @@
 //! A module for the [`PetitSet`] data structure
 
 use crate::InsertionError;
+use core::mem::swap;
 
 /// A set-like data structure with a fixed maximum size
 ///
@@ -19,20 +20,50 @@ use crate::InsertionError;
 ///
 /// The maximum size of this type is given by the const-generic type parameter `CAP`.
 /// Entries in this structure are guaranteed to be unique.
-#[derive(Debug, Clone, Copy, Eq)]
-pub struct PetitSet<T: Eq + Copy, const CAP: usize> {
+#[derive(Debug, Clone, Eq)]
+pub struct PetitSet<T: Eq, const CAP: usize> {
     storage: [Option<T>; CAP],
 }
 
-impl<T: Eq + Copy, const CAP: usize> Default for PetitSet<T, CAP> {
+impl<T: Eq, const CAP: usize> Default for PetitSet<T, CAP> {
     fn default() -> Self {
-        Self {
-            storage: [None; CAP],
-        }
+        Self::new()
     }
 }
 
-impl<T: Eq + Copy, const CAP: usize> PetitSet<T, CAP> {
+impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
+    /// Create a new empty [`PetitSet`].
+    ///
+    /// The capacity is given by the generic parameter `CAP`.
+    pub fn new() -> Self {
+        use core::mem::MaybeUninit;
+        // This use of assume_init() is to get us an uninitialized array.
+        // This is safe because the arrays contents are all MaybeUninit. Taken
+        // from the docs for MaybeUninit.
+        //
+        // BLOCKED: use uninit_array() &co once they are stabilized.
+        let mut data: [MaybeUninit<Option<T>>; CAP] =
+            unsafe { MaybeUninit::uninit().assume_init() };
+
+        for element in data.iter_mut() {
+            element.write(None);
+        }
+
+        PetitSet {
+            storage: unsafe { data.map(|u| u.assume_init()) },
+        }
+    }
+
+    /// Returns the current number of elements in the [`PetitSet`]
+    pub fn len(&self) -> usize {
+        self.storage.iter().filter(|e| e.is_some()).count()
+    }
+
+    /// Returns an iterator over the elements of the [`PetitSet`]
+    pub fn iter(&self) -> impl Iterator<Item = &T> {
+        self.storage.iter().filter_map(|e| e.as_ref())
+    }
+
     /// Returns the index of the next filled slot, if any
     ///
     /// Returns None if the cursor is larger than CAP
@@ -71,12 +102,6 @@ impl<T: Eq + Copy, const CAP: usize> PetitSet<T, CAP> {
         CAP
     }
 
-    /// Returns the current number of elements in the [`PetitSet`]
-    #[must_use]
-    pub fn len(&self) -> usize {
-        self.storage.iter().filter(|e| e.is_some()).count()
-    }
-
     /// Are there exactly 0 elements in the [`PetitSet`]?
     #[must_use]
     pub fn is_empty(&self) -> bool {
@@ -105,45 +130,6 @@ impl<T: Eq + Copy, const CAP: usize> PetitSet<T, CAP> {
         } else {
             None
         }
-    }
-
-    /// Create a new empty [`PetitSet`] where all values are the same
-    ///
-    /// The capacity is given by the generic parameter `CAP`.
-    #[must_use]
-    pub fn new(value: T) -> Self {
-        PetitSet {
-            storage: [Some(value); CAP],
-        }
-    }
-
-    /// Removes all elements from the set without allocation
-    pub fn clear(&mut self) {
-        self.storage = [None; CAP];
-    }
-
-    /// Removes the element at the provided index
-    ///
-    /// Returns `Some(T)` if an element was found at that index, or `None` if no element was there.
-    ///
-    /// # Panics
-    /// Panics if the provided index is larger than CAP.
-    pub fn remove_at(&mut self, index: usize) -> Option<T> {
-        assert!(index <= CAP);
-
-        let removed = self.storage[index];
-        self.storage[index] = None;
-        removed
-    }
-
-    /// Returns a mutable reference to the value at the provided index of the underlying array
-    ///
-    /// # Panics
-    /// Panics if the index is out-of-bounds or does not contain data
-    #[must_use]
-    pub fn get_unchecked(&mut self, index: usize) -> T {
-        assert!(index <= CAP);
-        self.storage[index].unwrap()
     }
 
     /// Returns the index for the provided element, if it exists in the set
@@ -202,16 +188,60 @@ impl<T: Eq + Copy, const CAP: usize> PetitSet<T, CAP> {
         }
     }
 
+    /// Removes all elements from the set without allocation
+    pub fn clear(&mut self) {
+        for element in self.storage.iter_mut() {
+            *element = None;
+        }
+    }
+
     /// Removes the element from the set, if it exists
     ///
     /// Returns `Some(index)` if the element was found, or `None` if no matching element is found
     pub fn remove(&mut self, element: &T) -> Option<usize> {
         if let Some(index) = self.find(element) {
-            self.remove_at(index);
+            self.storage[index] = None;
             Some(index)
         } else {
             None
         }
+    }
+
+    /// Removes the element at the provided index
+    ///
+    /// Returns true if an element was found
+    ///
+    /// # Panics
+    /// Panics if the provided index is larger than CAP.
+    pub fn remove_at(&mut self, index: usize) -> bool {
+        self.take_at(index).is_some()
+    }
+
+    /// Removes an element from the set, if it exists, returning
+    /// both the value that compared equal and the index at which
+    /// it was stored.
+    #[must_use = "Use remove if the value is not needed."]
+    pub fn take(&mut self, element: &T) -> Option<(usize, T)> {
+        if let Some(index) = self.find(element) {
+            self.take_at(index).map(|removed| (index, removed))
+        } else {
+            None
+        }
+    }
+
+    /// Removes the element at the provided index
+    ///
+    /// Returns `Some(T)` if an element was found at that index, or `None` if no element was there.
+    ///
+    /// # Panics
+    /// Panics if the provided index is larger than CAP.
+    #[must_use = "Use remove_at if the value is not needed."]
+    pub fn take_at(&mut self, index: usize) -> Option<T> {
+        assert!(index <= CAP);
+
+        let mut removed = None;
+        swap(&mut removed, &mut self.storage[index]);
+        removed
     }
 
     /// Insert a new element to the set at the provided index
@@ -228,14 +258,13 @@ impl<T: Eq + Copy, const CAP: usize> PetitSet<T, CAP> {
             return None;
         }
 
-        let preexisting_element = self.remove_at(index);
-        self.storage[index] = Some(element);
-
-        preexisting_element
+        let mut element = Some(element);
+        swap(&mut element, &mut self.storage[index]);
+        element
     }
 }
 
-impl<T: Eq + Copy, const CAP: usize> IntoIterator for PetitSet<T, CAP> {
+impl<T: Eq, const CAP: usize> IntoIterator for PetitSet<T, CAP> {
     type Item = T;
     type IntoIter = PetitSetIter<T, CAP>;
     fn into_iter(self) -> Self::IntoIter {
@@ -247,19 +276,21 @@ impl<T: Eq + Copy, const CAP: usize> IntoIterator for PetitSet<T, CAP> {
 }
 
 /// An [`Iterator`] struct for [`PetitSet`]
-#[derive(Default, Clone, Debug)]
-pub struct PetitSetIter<T: Eq + Copy, const CAP: usize> {
+#[derive(Clone, Debug)]
+pub struct PetitSetIter<T: Eq, const CAP: usize> {
     set: PetitSet<T, CAP>,
     cursor: usize,
 }
 
-impl<T: Eq + Clone + Copy, const CAP: usize> Iterator for PetitSetIter<T, CAP> {
+impl<T: Eq, const CAP: usize> Iterator for PetitSetIter<T, CAP> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(index) = self.set.next_filled_index(self.cursor) {
             self.cursor = index + 1;
-            Some(self.set.get_unchecked(index))
+            let result = self.set.take_at(index);
+            debug_assert!(result.is_some());
+            result
         } else {
             self.cursor = CAP;
             None
@@ -267,7 +298,7 @@ impl<T: Eq + Clone + Copy, const CAP: usize> Iterator for PetitSetIter<T, CAP> {
     }
 }
 
-impl<T: Eq + Copy, const CAP: usize> FromIterator<T> for PetitSet<T, CAP> {
+impl<T: Eq, const CAP: usize> FromIterator<T> for PetitSet<T, CAP> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut set: PetitSet<T, CAP> = PetitSet::default();
         for element in iter {
@@ -277,7 +308,7 @@ impl<T: Eq + Copy, const CAP: usize> FromIterator<T> for PetitSet<T, CAP> {
     }
 }
 
-impl<T: Eq + Copy, const CAP: usize> PartialEq for PetitSet<T, CAP> {
+impl<T: Eq, const CAP: usize> PartialEq for PetitSet<T, CAP> {
     /// Uses an inefficient O(n^2) approach to avoid introducing additional trait bounds
     fn eq(&self, other: &Self) -> bool {
         // Two sets cannot be equal if their cardinality differs
@@ -285,9 +316,9 @@ impl<T: Eq + Copy, const CAP: usize> PartialEq for PetitSet<T, CAP> {
             return false;
         }
 
-        for item in *self {
+        for item in self.iter() {
             let mut match_found = false;
-            for other_item in *other {
+            for other_item in other.iter() {
                 // If a match can be found, we do not need to find another match for `item`
                 if item == other_item {
                     match_found = true;
