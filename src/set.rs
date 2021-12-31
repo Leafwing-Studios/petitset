@@ -1,5 +1,7 @@
 //! A module for the [`PetitSet`] data structure
 
+use crate::InsertionError;
+
 /// A set-like data structure with a fixed maximum size
 ///
 /// This data structure does not require the [`Hash`] or [`Ord`] traits,
@@ -122,7 +124,8 @@ impl<T: Copy, const CAP: usize> PetitSet<T, CAP> {
     ///
     /// Returns `Some(T)` if an element was found at that index, or `None` if no element was there.
     ///
-    /// PANICS: panics if the provided index is larger than CAP.
+    /// # Panics
+    /// Panics if the provided index is larger than CAP.
     pub fn remove_at(&mut self, index: usize) -> Option<T> {
         assert!(index <= CAP);
 
@@ -133,7 +136,8 @@ impl<T: Copy, const CAP: usize> PetitSet<T, CAP> {
 
     /// Returns a mutable reference to the value at the provided index of the underlying array
     ///
-    /// PANICS: panics if the index is out-of-bounds or does not contain data
+    /// # Panics
+    /// Panics if the index is out-of-bounds or does not contain data
     #[must_use]
     pub fn get_unchecked(&mut self, index: usize) -> T {
         assert!(index <= CAP);
@@ -171,15 +175,15 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
 
     /// Attempt to insert a new element to the set
     ///
-    /// Returns Ok if this succeeds, or an error if this failed due to either capacity or a duplicate entry.
-    pub fn try_insert(&mut self, element: T) -> Result<(), InsertionError> {
-        if self.contains(&element) {
-            return Err(InsertionError::Duplicate);
+    /// Returns Ok(index) if this succeeds, or an error if this failed due to either capacity or a duplicate entry.
+    pub fn try_insert(&mut self, element: T) -> Result<usize, InsertionError> {
+        if let Some(index) = self.find(&element) {
+            return Err(InsertionError::Duplicate(index));
         }
 
         if let Some(index) = self.next_empty_index(0) {
             self.storage[index] = Some(element);
-            Ok(())
+            Ok(index)
         } else {
             Err(InsertionError::Overfull)
         }
@@ -187,7 +191,8 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
 
     /// Insert a new element to the set
     ///
-    /// PANICS: will panic if the set is full and the item is not a duplicate
+    /// # Panics
+    /// Panics if the set is full and the item is not a duplicate
     pub fn insert(&mut self, element: T) {
         // Always insert
         if let Err(InsertionError::Overfull) = self.try_insert(element) {
@@ -198,7 +203,8 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
 
     /// Inserts multiple new elements to the set
     ///
-    /// PANICS: will panic if the set would overflow due to the insertion of non-duplicate items
+    /// # Panics
+    /// Panics if the set would overflow due to the insertion of non-duplicate items
     pub fn insert_multiple(&mut self, elements: impl IntoIterator<Item = T>) {
         for element in elements {
             self.insert(element);
@@ -210,7 +216,7 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
 impl<T: Copy + Eq, const CAP: usize> PetitSet<T, CAP> {
     /// Removes the element from the set, if it exists
     ///
-    /// Returns `Some(index, T)` for the first matching element found, or `None` if no matching element is found
+    /// Returns `Some(index, T)` if the element was found, or `None` if no matching element is found
     pub fn remove(&mut self, element: &T) -> Option<(usize, T)> {
         if let Some(index) = self.find(element) {
             let removed_element = self.remove_at(index).unwrap();
@@ -225,7 +231,8 @@ impl<T: Copy + Eq, const CAP: usize> PetitSet<T, CAP> {
     /// Returns `Some(T)` if an element was found at that index, or `None` if no element was there.
     /// If a matching element already exists in the set, `None` will be returned.
     ///
-    /// PANICS: panics if the provided index is larger than CAP.
+    /// # Panics
+    /// Panics if the provided index is larger than CAP.
     pub fn insert_at(&mut self, element: T, index: usize) -> Option<T> {
         assert!(index <= CAP);
 
@@ -307,13 +314,4 @@ impl<T: Eq + Copy, const CAP: usize> PartialEq for PetitSet<T, CAP> {
         // Matches must be found for all items in the set for the them to be equal
         true
     }
-}
-
-/// An error returned when attempting to insert into a [`PetitSet`]
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum InsertionError {
-    /// The set was full before insertion was attempted
-    Overfull,
-    /// A matching entry already existed
-    Duplicate,
 }

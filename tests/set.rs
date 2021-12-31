@@ -1,5 +1,6 @@
 mod tests {
     use petitset::set::*;
+    use petitset::InsertionError;
 
     #[test]
     fn reject_duplicates() {
@@ -13,7 +14,7 @@ mod tests {
         assert!(set.len() == 1);
 
         let result = set.try_insert(1);
-        assert_eq!(result, Err(InsertionError::Duplicate));
+        assert_eq!(result, Err(InsertionError::Duplicate(0)));
         assert!(set.len() == 1);
 
         set.insert_at(1, 0);
@@ -31,8 +32,8 @@ mod tests {
         assert!(set.len() == set.capacity());
 
         // Duplicates do not overflow
-        let duplicate_result = set.try_insert(1);
-        assert_eq!(duplicate_result, Err(InsertionError::Duplicate));
+        let duplicate_result = set.try_insert(2);
+        assert_eq!(duplicate_result, Err(InsertionError::Duplicate(1)));
         assert!(set.len() == set.capacity());
 
         // Non-duplicates fail to insert

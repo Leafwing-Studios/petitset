@@ -12,3 +12,13 @@ pub mod utils;
 
 pub use map::PetitMap;
 pub use set::PetitSet;
+
+/// An error returned when attempting to insert into a [`PetitSet`] or [`PetitMap`]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum InsertionError {
+    /// The set was full before insertion was attempted
+    Overfull,
+    /// A matching entry already existed, and the index where it was found
+    /// Cannot occur for [`PetitMap`], as existing values are overwritten
+    Duplicate(usize),
+}
