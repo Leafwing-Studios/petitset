@@ -1,3 +1,5 @@
+//! Assorted utilities for [`PetitSet`] and [`PetitMap`](crate::PetitMap), which are primarily valuable when writing tests
+
 use crate::set::PetitSet;
 
 impl<T: PartialEq + Clone + Copy + Ord, const CAP: usize> PetitSet<T, CAP> {

@@ -110,7 +110,7 @@ mod tests {
         assert!(set.is_sorted());
 
         set.remove_at(5);
-        assert!(set.get(5).is_none());
+        assert!(set.get_at(5).is_none());
 
         set.insert_at(5, 5);
         assert!(set.is_sorted());

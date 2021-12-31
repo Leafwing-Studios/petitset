@@ -1,4 +1,4 @@
-//! A module for the [`PetitSet`] data type, a simple array-backed set storage
+//! A module for the [`PetitSet`] data structure
 
 /// A set-like data structure with a fixed maximum size
 ///
@@ -143,7 +143,7 @@ impl<T: PartialEq + Clone + Copy, const CAP: usize> PetitSet<T, CAP> {
     ///
     /// Returns `Some(&T)` if the index is in-bounds and has an element
     #[must_use]
-    pub fn get(&self, index: usize) -> Option<&T> {
+    pub fn get_at(&self, index: usize) -> Option<&T> {
         if let Some(reference) = &self.storage[index] {
             Some(reference)
         } else {
@@ -155,7 +155,7 @@ impl<T: PartialEq + Clone + Copy, const CAP: usize> PetitSet<T, CAP> {
     ///
     /// Returns `Some(&mut T)` if the index is in-bounds and has an element
     #[must_use]
-    pub fn get_mut(&mut self, index: usize) -> Option<&mut T> {
+    pub fn get_at_mut(&mut self, index: usize) -> Option<&mut T> {
         if let Some(reference) = &mut self.storage[index] {
             Some(reference)
         } else {
@@ -172,19 +172,28 @@ impl<T: PartialEq + Clone + Copy, const CAP: usize> PetitSet<T, CAP> {
         self.storage[index].unwrap()
     }
 
-    /// Removes the element from the set, if it exists
-    ///
-    /// Returns `Some(index, T)` for the first matching element found, or `None` if no matching element is found
-    pub fn remove(&mut self, element: &T) -> Option<(usize, T)> {
+    /// Returns the index for the provided element, if it exists in the set
+    pub fn find(&self, element: &T) -> Option<usize> {
         for index in 0..CAP {
             if let Some(existing_element) = &self.storage[index] {
                 if *element == *existing_element {
-                    let removed_element = self.remove_at(index).unwrap();
-                    return Some((index, removed_element));
+                    return Some(index);
                 }
             }
         }
         None
+    }
+
+    /// Removes the element from the set, if it exists
+    ///
+    /// Returns `Some(index, T)` for the first matching element found, or `None` if no matching element is found
+    pub fn remove(&mut self, element: &T) -> Option<(usize, T)> {
+        if let Some(index) = self.find(element) {
+            let removed_element = self.remove_at(index).unwrap();
+            Some((index, removed_element))
+        } else {
+            None
+        }
     }
 
     /// Removes the element at the provided index
