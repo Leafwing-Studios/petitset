@@ -42,7 +42,13 @@ impl<T: PartialEq + Clone + Copy, const CAP: usize> PetitSet<T, CAP> {
     }
 
     /// Returns the index of the next filled slot, if any
-    pub fn next_index(&self, cursor: usize) -> Option<usize> {
+    ///
+    /// Returns None if the cursor is larger than CAP
+    pub fn next_filled_index(&self, cursor: usize) -> Option<usize> {
+        if cursor >= CAP {
+            return None;
+        }
+
         for i in cursor..CAP {
             if self.storage[i].is_some() {
                 return Some(i);
@@ -52,7 +58,13 @@ impl<T: PartialEq + Clone + Copy, const CAP: usize> PetitSet<T, CAP> {
     }
 
     /// Returns the index of the next empty slot, if any
+    ///
+    /// Returns None if the cursor is larger than CAP
     pub fn next_empty_index(&self, cursor: usize) -> Option<usize> {
+        if cursor >= CAP {
+            return None;
+        }
+
         for i in cursor..CAP {
             if self.storage[i].is_none() {
                 return Some(i);
@@ -223,10 +235,11 @@ impl<T: PartialEq + Clone + Copy, const CAP: usize> Iterator for PetitSetIter<T,
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(index) = self.set.next_index(self.cursor) {
-            self.cursor = index;
+        if let Some(index) = self.set.next_filled_index(self.cursor) {
+            self.cursor = index + 1;
             Some(self.set.get_unchecked(index).clone())
         } else {
+            self.cursor = CAP;
             None
         }
     }
