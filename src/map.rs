@@ -113,15 +113,15 @@ impl<K: Eq + Copy, V: Copy, const CAP: usize> PetitMap<K, V, CAP> {
 
     /// Returns a reference to the value at the provided index.
     ///
-    /// Returns `Some(&V)` if the index is in-bounds and has an element.
+    /// Returns `Some((K, V))` if the index is in-bounds and has an element.
     ///
     /// # Panics
     /// Panics if the provided index is larger than CAP.
-    pub fn get_at(&self, index: usize) -> Option<&V> {
+    pub fn get_at(&self, index: usize) -> Option<(K, V)> {
         assert!(index <= CAP);
 
-        if let Some(reference) = &self.values[index] {
-            Some(reference)
+        if let Some(value) = &self.values[index] {
+            Some((*self.keys.get_at(index).unwrap(), *value))
         } else {
             None
         }
@@ -129,15 +129,15 @@ impl<K: Eq + Copy, V: Copy, const CAP: usize> PetitMap<K, V, CAP> {
 
     /// Returns a mutable reference to the value at the provided index.
     ///
-    /// Returns `Some(&mut V)` if the index is in-bounds and has an element
+    /// Returns `Some((&mut K, &mut V))` if the index is in-bounds and has an element
     ///
     /// # Panics
     /// Panics if the provided index is larger than CAP.
-    pub fn get_at_mut(&mut self, index: usize) -> Option<&mut V> {
+    pub fn get_at_mut(&mut self, index: usize) -> Option<(&mut K, &mut V)> {
         assert!(index <= CAP);
 
-        if let Some(reference) = &mut self.values[index] {
-            Some(reference)
+        if let Some(value) = &mut self.values[index] {
+            Some((self.keys.get_at_mut(index).unwrap(), value))
         } else {
             None
         }
@@ -194,5 +194,37 @@ impl<K: Eq + Copy, V: Copy, const CAP: usize> PetitMap<K, V, CAP> {
     /// The item type is a `&'a mut V`
     pub fn values_mut(&mut self) -> impl Iterator<Item = &mut V> {
         self.values.iter_mut().filter_map(|e| e.as_mut())
+    }
+}
+
+impl<K: Eq + Copy, V: Copy, const CAP: usize> IntoIterator for PetitMap<K, V, CAP> {
+    type Item = (K, V);
+    type IntoIter = PetitMapIter<K, V, CAP>;
+    fn into_iter(self) -> Self::IntoIter {
+        PetitMapIter {
+            map: self,
+            cursor: 0,
+        }
+    }
+}
+
+/// An [`Iterator`] struct for [`PetitMap`]
+#[derive(Default, Clone, Copy, Debug)]
+pub struct PetitMapIter<K: Eq + Copy, V: Copy, const CAP: usize> {
+    map: PetitMap<K, V, CAP>,
+    cursor: usize,
+}
+
+impl<K: Eq + Copy, V: Copy, const CAP: usize> Iterator for PetitMapIter<K, V, CAP> {
+    type Item = (K, V);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(index) = self.map.keys.next_filled_index(self.cursor) {
+            self.cursor = index + 1;
+            self.map.get_at(index)
+        } else {
+            self.cursor = CAP;
+            None
+        }
     }
 }

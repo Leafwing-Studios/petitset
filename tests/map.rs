@@ -15,8 +15,8 @@ mod tests {
 
         assert_eq!(*map.get(&1).unwrap(), 11);
         assert_eq!(*map.get_mut(&3).unwrap(), 31);
-        assert_eq!(*map.get_at(2).unwrap(), 41);
-        assert_eq!(*map.get_at_mut(3).unwrap(), 21);
+        assert_eq!(map.get_at(2).unwrap(), (4, 41));
+        assert_eq!(map.get_at_mut(3).unwrap(), (&mut 2, &mut 21));
     }
 
     #[test]

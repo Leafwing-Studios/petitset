@@ -247,6 +247,17 @@ impl<T: Copy + Eq, const CAP: usize> PetitSet<T, CAP> {
     }
 }
 
+impl<T: Eq + Clone + Copy, const CAP: usize> IntoIterator for PetitSet<T, CAP> {
+    type Item = T;
+    type IntoIter = PetitSetIter<T, CAP>;
+    fn into_iter(self) -> Self::IntoIter {
+        PetitSetIter {
+            set: self,
+            cursor: 0,
+        }
+    }
+}
+
 /// An [`Iterator`] struct for [`PetitSet`]
 #[derive(Default, Clone, Copy, Debug)]
 pub struct PetitSetIter<T: Copy, const CAP: usize> {
@@ -254,7 +265,7 @@ pub struct PetitSetIter<T: Copy, const CAP: usize> {
     cursor: usize,
 }
 
-impl<T: PartialEq + Clone + Copy, const CAP: usize> Iterator for PetitSetIter<T, CAP> {
+impl<T: Eq + Clone + Copy, const CAP: usize> Iterator for PetitSetIter<T, CAP> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -264,17 +275,6 @@ impl<T: PartialEq + Clone + Copy, const CAP: usize> Iterator for PetitSetIter<T,
         } else {
             self.cursor = CAP;
             None
-        }
-    }
-}
-
-impl<T: PartialEq + Clone + Copy, const CAP: usize> IntoIterator for PetitSet<T, CAP> {
-    type Item = T;
-    type IntoIter = PetitSetIter<T, CAP>;
-    fn into_iter(self) -> Self::IntoIter {
-        PetitSetIter {
-            set: self,
-            cursor: 0,
         }
     }
 }
