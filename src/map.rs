@@ -24,7 +24,7 @@ use crate::InsertionError;
 ///
 /// The maximum size of this type is given by the const-generic type parameter `CAP`.
 /// Keys are guaranteed to be unique.
-#[derive(PartialEq, Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct PetitMap<K: Eq + Copy, V: Copy, const CAP: usize> {
     keys: PetitSet<K, CAP>,
     values: [Option<V>; CAP],
@@ -226,5 +226,16 @@ impl<K: Eq + Copy, V: Copy, const CAP: usize> Iterator for PetitMapIter<K, V, CA
             self.cursor = CAP;
             None
         }
+    }
+}
+
+impl<K: Eq + Copy, V: Copy + PartialEq, const CAP: usize> PartialEq for PetitMap<K, V, CAP> {
+    fn eq(&self, other: &Self) -> bool {
+        for key in self.keys() {
+            if self.get(&key) != other.get(&key) {
+                return false;
+            }
+        }
+        true
     }
 }

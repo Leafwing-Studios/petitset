@@ -54,4 +54,17 @@ mod tests {
         map.insert(2, 2);
         map.insert(3, 3);
     }
+
+    #[test]
+    fn equality_ignores_order() {
+        let mut map_1: PetitMap<i32, i32, 2> = PetitMap::default();
+        map_1.insert(1, 1);
+        map_1.insert(2, 2);
+
+        let mut map_2: PetitMap<i32, i32, 2> = PetitMap::default();
+        map_2.insert(2, 2);
+        map_2.insert(1, 1);
+
+        assert_eq!(map_1, map_2);
+    }
 }
