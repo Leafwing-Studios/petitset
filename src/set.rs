@@ -169,7 +169,7 @@ impl<T: PartialEq + Clone + Copy, const CAP: usize> PetitSet<T, CAP> {
     #[must_use]
     pub fn get_unchecked(&self, index: usize) -> T {
         assert!(index <= CAP);
-        self.storage[index].unwrap().clone()
+        self.storage[index].unwrap()
     }
 
     /// Removes the element from the set, if it exists
@@ -237,7 +237,7 @@ impl<T: PartialEq + Clone + Copy, const CAP: usize> Iterator for PetitSetIter<T,
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(index) = self.set.next_filled_index(self.cursor) {
             self.cursor = index + 1;
-            Some(self.set.get_unchecked(index).clone())
+            Some(self.set.get_unchecked(index))
         } else {
             self.cursor = CAP;
             None
