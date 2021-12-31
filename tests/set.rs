@@ -31,8 +31,8 @@ mod tests {
         assert!(set.len() == set.capacity());
 
         // Duplicates do not overflow
-        let ok_result = set.try_insert(1);
-        assert!(ok_result.is_ok());
+        let duplicate_result = set.try_insert(1);
+        assert_eq!(duplicate_result, Err(InsertionError::Duplicate));
         assert!(set.len() == set.capacity());
 
         // Non-duplicates fail to insert
