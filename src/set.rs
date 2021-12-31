@@ -8,8 +8,6 @@ use crate::InsertionError;
 /// and instead uses linear iteration to find entries.
 /// Iteration order is guaranteed to be stable, and elements are not re-compressed upon removal.
 ///
-/// In almost all cases, you will want to ensure that `T` is both [`Copy`] and [`Eq`].
-///
 /// Principally, this data structure should be used for relatively small sets,
 /// where iteration performance, stable-order, stack-allocation and uniqueness
 /// are more important than insertion or look-up speed.
@@ -21,13 +19,20 @@ use crate::InsertionError;
 ///
 /// The maximum size of this type is given by the const-generic type parameter `CAP`.
 /// Entries in this structure are guaranteed to be unique.
-#[derive(Debug, Clone, Copy)]
-pub struct PetitSet<T, const CAP: usize> {
+#[derive(Debug, Clone, Copy, Eq)]
+pub struct PetitSet<T: Eq + Copy, const CAP: usize> {
     storage: [Option<T>; CAP],
 }
 
-// No bounds
-impl<T, const CAP: usize> PetitSet<T, CAP> {
+impl<T: Eq + Copy, const CAP: usize> Default for PetitSet<T, CAP> {
+    fn default() -> Self {
+        Self {
+            storage: [None; CAP],
+        }
+    }
+}
+
+impl<T: Eq + Copy, const CAP: usize> PetitSet<T, CAP> {
     /// Returns the index of the next filled slot, if any
     ///
     /// Returns None if the cursor is larger than CAP
@@ -101,10 +106,7 @@ impl<T, const CAP: usize> PetitSet<T, CAP> {
             None
         }
     }
-}
 
-// Only Copy
-impl<T: Copy, const CAP: usize> PetitSet<T, CAP> {
     /// Create a new empty [`PetitSet`] where all values are the same
     ///
     /// The capacity is given by the generic parameter `CAP`.
@@ -143,18 +145,7 @@ impl<T: Copy, const CAP: usize> PetitSet<T, CAP> {
         assert!(index <= CAP);
         self.storage[index].unwrap()
     }
-}
 
-impl<T: Copy, const CAP: usize> Default for PetitSet<T, CAP> {
-    fn default() -> Self {
-        Self {
-            storage: [None; CAP],
-        }
-    }
-}
-
-// Only Eq
-impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     /// Returns the index for the provided element, if it exists in the set
     pub fn find(&self, element: &T) -> Option<usize> {
         for index in 0..CAP {
@@ -210,10 +201,7 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
             self.insert(element);
         }
     }
-}
 
-// Copy and Eq
-impl<T: Copy + Eq, const CAP: usize> PetitSet<T, CAP> {
     /// Removes the element from the set, if it exists
     ///
     /// Returns `Some(index)` if the element was found, or `None` if no matching element is found
@@ -247,7 +235,7 @@ impl<T: Copy + Eq, const CAP: usize> PetitSet<T, CAP> {
     }
 }
 
-impl<T: Eq + Clone + Copy, const CAP: usize> IntoIterator for PetitSet<T, CAP> {
+impl<T: Eq + Copy, const CAP: usize> IntoIterator for PetitSet<T, CAP> {
     type Item = T;
     type IntoIter = PetitSetIter<T, CAP>;
     fn into_iter(self) -> Self::IntoIter {
@@ -259,8 +247,8 @@ impl<T: Eq + Clone + Copy, const CAP: usize> IntoIterator for PetitSet<T, CAP> {
 }
 
 /// An [`Iterator`] struct for [`PetitSet`]
-#[derive(Default, Clone, Copy, Debug)]
-pub struct PetitSetIter<T: Copy, const CAP: usize> {
+#[derive(Default, Clone, Debug)]
+pub struct PetitSetIter<T: Eq + Copy, const CAP: usize> {
     set: PetitSet<T, CAP>,
     cursor: usize,
 }

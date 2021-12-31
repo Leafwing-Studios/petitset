@@ -24,7 +24,7 @@ use crate::InsertionError;
 ///
 /// The maximum size of this type is given by the const-generic type parameter `CAP`.
 /// Keys are guaranteed to be unique.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq)]
 pub struct PetitMap<K: Eq + Copy, V: Copy, const CAP: usize> {
     keys: PetitSet<K, CAP>,
     values: [Option<V>; CAP],
