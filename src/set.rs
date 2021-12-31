@@ -1,8 +1,8 @@
-//! A module for the [PetitSet] data type, a simple array-backed set storage
+//! A module for the [`PetitSet`] data type, a simple array-backed set storage
 
 /// A set-like data structure with a fixed maximum size
 ///
-/// This data structure does not require the [Hash] or [Ord] traits,
+/// This data structure does not require the [`Hash`] or [`Ord`] traits,
 /// and instead uses linear iteration to find entries.
 /// Iteration order is guaranteed to be stable, and elements are not re-compressed upon removal.
 ///
@@ -12,7 +12,7 @@
 /// Iteration, insertion and checking whether an element is in the set are O(CAP).
 /// Indexing into a particular element is O(1), as is removing an element at a specific index.
 ///
-/// The values are stored as [Option]s within an array,
+/// The values are stored as [`Option`]s within an array,
 /// so niche optimization can significantly reduce memory footprint.
 ///
 /// The maximum size of this type is given by the const-generic type parameter `CAP`.
@@ -31,7 +31,7 @@ impl<T: PartialEq + Clone + Copy, const CAP: usize> Default for PetitSet<T, CAP>
 }
 
 impl<T: PartialEq + Clone + Copy, const CAP: usize> PetitSet<T, CAP> {
-    /// Create a new empty [PetitSet] where all values are the same
+    /// Create a new empty [`PetitSet`] where all values are the same
     ///
     /// The capacity is given by the generic parameter `CAP`.
     #[must_use]
@@ -200,19 +200,19 @@ impl<T: PartialEq + Clone + Copy, const CAP: usize> PetitSet<T, CAP> {
         removed
     }
 
-    /// Return the capacity of the [PetitSet]
+    /// Return the capacity of the [`PetitSet`]
     #[must_use]
     pub fn capacity(&self) -> usize {
         CAP
     }
 
-    /// Returns the current number of elements in the [PetitSet]
+    /// Returns the current number of elements in the [`PetitSet`]
     #[must_use]
     pub fn len(&self) -> usize {
         self.storage.iter().filter(|e| e.is_some()).count()
     }
 
-    /// Are there exactly 0 elements in the [PetitSet]?
+    /// Are there exactly 0 elements in the [`PetitSet`]?
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.storage.len() == 0
@@ -224,7 +224,7 @@ impl<T: PartialEq + Clone + Copy, const CAP: usize> PetitSet<T, CAP> {
     }
 }
 
-/// An [Iterator] struct for [PetitSet]
+/// An [`Iterator`] struct for [`PetitSet`]
 #[derive(Default, Clone, Copy, PartialEq, Debug)]
 pub struct PetitSetIter<T: PartialEq + Clone + Copy, const CAP: usize> {
     set: PetitSet<T, CAP>,
@@ -293,7 +293,7 @@ impl<T: PartialEq + Clone + Copy, const CAP: usize> PartialEq for PetitSet<T, CA
     }
 }
 
-/// An error returned when attempting to insert into a [PetitSet]
+/// An error returned when attempting to insert into a [`PetitSet`]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum InsertionError {
     /// The set was full before insertion was attempted
