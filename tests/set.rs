@@ -2,15 +2,6 @@ mod tests {
     use petitset::set::*;
 
     #[test]
-    fn equality_ignores_order() {
-        let mut set_1: PetitSet<u8, 16> = PetitSet::default();
-        set_1.insert_multiple(7..=11);
-
-        let set_2: PetitSet<u8, 16> = PetitSet::from_iter(11..=7);
-        assert_eq!(set_1, set_2);
-    }
-
-    #[test]
     fn reject_duplicates() {
         let mut set: PetitSet<u8, 4> = PetitSet::default();
         assert!(set.len() == 0);
@@ -82,6 +73,15 @@ mod tests {
         let mut backwards_set: PetitSet<u8, 8> = PetitSet::default();
         backwards_set.insert_multiple(8..0);
         assert!(!backwards_set.is_sorted());
+    }
+
+    #[test]
+    fn equality_ignores_order() {
+        let mut set_1: PetitSet<u8, 16> = PetitSet::default();
+        set_1.insert_multiple(7..=11);
+
+        let set_2: PetitSet<u8, 16> = PetitSet::from_iter(11..=7);
+        assert_eq!(set_1, set_2);
     }
 
     #[test]
