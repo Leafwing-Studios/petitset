@@ -43,7 +43,7 @@ impl<K: Eq + Copy, V: Copy, const CAP: usize> PetitMap<K, V, CAP> {
     /// Stores the value into the map, which can be looked up by the key
     ///
     /// Returns Ok(index) at which the key / value pair was inserted if succesful
-    /// or Err(InsertionError::Overfull) if the map was already full
+    /// or [`Err(InsertionError::Overfull)`] if the map was already full
     pub fn try_insert(&mut self, key: K, value: V) -> Result<usize, InsertionError> {
         match self.keys.try_insert(key) {
             // No duplicate, so insert a fresh value
