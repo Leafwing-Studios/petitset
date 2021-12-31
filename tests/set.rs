@@ -90,9 +90,8 @@ mod tests {
         let mut set: PetitSet<u8, 8> = PetitSet::default();
         set.insert_multiple(0..8);
 
-        let (index, value) = set.remove(&3).unwrap();
+        let index = set.remove(&3).unwrap();
         assert_eq!(index, 3);
-        assert_eq!(value, 3);
 
         let value = set.remove_at(5).unwrap();
         assert_eq!(value, 5);

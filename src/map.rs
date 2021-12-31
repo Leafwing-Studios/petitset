@@ -145,12 +145,12 @@ impl<K: Eq + Copy, V: Copy, const CAP: usize> PetitMap<K, V, CAP> {
 
     /// Removes the key-value pair from the map if the key is found
     ///
-    /// Returns `Some((index, K, V))` if it was found
-    pub fn remove(&mut self, key: &K) -> Option<(usize, K, V)> {
+    /// Returns `Some((index, V))` if it was found
+    pub fn remove(&mut self, key: &K) -> Option<(usize, V)> {
         if let Some(index) = self.find(key) {
             // We know this is valid, because we just found the right index
-            let (key, value) = self.remove_at(index).unwrap();
-            Some((index, key, value))
+            let (_key, value) = self.remove_at(index).unwrap();
+            Some((index, value))
         } else {
             None
         }

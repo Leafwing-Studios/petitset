@@ -216,11 +216,11 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
 impl<T: Copy + Eq, const CAP: usize> PetitSet<T, CAP> {
     /// Removes the element from the set, if it exists
     ///
-    /// Returns `Some(index, T)` if the element was found, or `None` if no matching element is found
-    pub fn remove(&mut self, element: &T) -> Option<(usize, T)> {
+    /// Returns `Some(index)` if the element was found, or `None` if no matching element is found
+    pub fn remove(&mut self, element: &T) -> Option<usize> {
         if let Some(index) = self.find(element) {
-            let removed_element = self.remove_at(index).unwrap();
-            Some((index, removed_element))
+            self.remove_at(index);
+            Some(index)
         } else {
             None
         }

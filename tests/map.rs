@@ -35,7 +35,7 @@ mod tests {
         map.insert(3, 33);
 
         let removed = map.remove(&3);
-        assert_eq!(removed, Some((1, 3, 33)));
+        assert_eq!(removed, Some((1, 33)));
         assert_eq!(map.find(&3), None);
 
         let removed_at = map.remove_at(0);
