@@ -120,11 +120,9 @@ impl<K: Eq + Copy, V: Copy, const CAP: usize> PetitMap<K, V, CAP> {
     pub fn get_at(&self, index: usize) -> Option<(K, V)> {
         assert!(index <= CAP);
 
-        if let Some(value) = &self.values[index] {
-            Some((*self.keys.get_at(index).unwrap(), *value))
-        } else {
-            None
-        }
+        self.values[index]
+            .as_ref()
+            .map(|value| (*self.keys.get_at(index).unwrap(), *value))
     }
 
     /// Returns a mutable reference to the value at the provided index.
