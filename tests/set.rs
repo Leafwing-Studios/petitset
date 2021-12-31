@@ -5,7 +5,7 @@ mod tests {
     #[test]
     fn reject_duplicates() {
         let mut set: PetitSet<u8, 4> = PetitSet::default();
-        assert!(set.len() == 0);
+        assert!(set.is_empty());
 
         set.insert(1);
         assert!(set.len() == 1);
