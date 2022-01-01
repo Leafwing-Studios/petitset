@@ -372,24 +372,25 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
         }
     }
 
-    /// Constructs a new `PetitSet` by consuming values from an iterator.
+    /// Constructs a new [`PetitMap`] by consuming values from an iterator.
     ///
     /// The consumed values will be stored in order, with duplicate elements discarded.
     ///
     /// Returns an error if the iterator produces more than `CAP` distinct elements. The
     /// returned error will include both the element that could not be inserted, and
-    /// a PetitSet containing all elements up to that point.
+    /// a [`PetitMap`] containing all elements up to that point.
     ///
-    /// ```
+    /// # Example
+    /// ```rust
     /// use petitset::CapacityError;
     /// use petitset::PetitSet;
     ///
-    /// let elems = vec![1, 2, 1, 4, 3, 1];
+    /// let elems = vec![(1, 11), (2, 21), (1, 12), (4, 41), (3, 31), (1, 13)];
     /// let set = PetitSet::<_, 5>::try_from_iter(elems.iter().copied());
-    /// assert_eq!(set, Ok(PetitSet::from_raw_array_unchecked([Some(1), Some(2), Some(4), Some(3), None])));
+    /// assert_eq!(set, Ok(PetitSet::from_raw_array_unchecked([Some((1,13)), Some((2, 21)), Some((4, 41)), Some((3, 31)), None])));
     ///
     /// let failed = PetitSet::<_, 3>::try_from_iter(elems.iter().copied());
-    /// assert_eq!(failed, Err(CapacityError((PetitSet::from_raw_array_unchecked([Some(1), Some(2), Some(4)]), 3))));
+    /// assert_eq!(failed, Err(CapacityError((PetitSet::from_raw_array_unchecked([Some((1,13)), Some((2, 21)), Some((4, 41))]), (3, 31)))));
     /// ```
     pub fn try_from_iter<I: IntoIterator<Item = (K, V)>>(
         element_iter: I,

@@ -232,15 +232,16 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
         self.map.swap(element_a, element_b)
     }
 
-    /// Constructs a new `PetitSet` by consuming values from an iterator.
+    /// Constructs a new [`PetitSet`] by consuming values from an iterator.
     ///
     /// The consumed values will be stored in order, with duplicate elements discarded.
     ///
     /// Returns an error if the iterator produces more than `CAP` distinct elements. The
     /// returned error will include both the element that could not be inserted, and
-    /// a PetitSet containing all elements up to that point.
+    /// a [`PetitSet`] containing all elements up to that point.
     ///
-    /// ```
+    /// # Example
+    /// ```rust
     /// use petitset::CapacityError;
     /// use petitset::PetitSet;
     ///
