@@ -1,7 +1,7 @@
 //! A module for the [`PetitSet`] data structure
 
-use crate::CapacityError;
 use crate::PetitMap;
+use crate::{map::SuccesfulMapInsertion, CapacityError};
 
 /// A set-like data structure with a fixed maximum size
 ///
@@ -146,23 +146,30 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
 
     /// Attempt to insert a new element to the set in the first available slot.
     ///
-    /// Returns the index of the element along with either true if the value was or false if it was already present.
-    ///
-    /// Returns a `CapacityError` if the element is not already present and the set is full.
-    pub fn try_insert(&mut self, element: T) -> Result<(usize, bool), CapacityError<T>> {
+    /// Inserts the element if able, then returns the [`Result`] of that operation.
+    /// This is either a [`SuccesfulSetInsertion`] or a [`CapacityError`].
+    pub fn try_insert(&mut self, element: T) -> Result<SuccesfulSetInsertion, CapacityError<T>> {
         match self.map.try_insert(element, ()) {
-            Ok(data) => Ok(data),
+            Ok(sucess) => match sucess {
+                SuccesfulMapInsertion::NovelKey(index) => {
+                    Ok(SuccesfulSetInsertion::NovelElenent(index))
+                }
+                SuccesfulMapInsertion::ExtantKey(_val, index) => {
+                    Ok(SuccesfulSetInsertion::ExtantElement(index))
+                }
+            },
             Err(CapacityError((key, _value))) => Err(CapacityError(key)),
         }
     }
 
     /// Insert a new element to the set in the first available slot
     ///
-    /// Returns the index of the element along with either true if the value was or false if it was already present.
+    /// Returns a [`SuccesfulSetInsertion`], which encodes both the index at which the element is stored
+    /// and whether the element was already present.
     ///
     /// # Panics
     /// Panics if the set is full and the item is not a duplicate
-    pub fn insert(&mut self, element: T) -> (usize, bool) {
+    pub fn insert(&mut self, element: T) -> SuccesfulSetInsertion {
         self.try_insert(element)
             .expect("Inserting this element would have overflowed the set!")
     }
@@ -337,4 +344,13 @@ impl<T: Eq, const CAP: usize> PartialEq for PetitSet<T, CAP> {
         // Matches must be found for all items in the set for the them to be equal
         true
     }
+}
+
+/// The `Ok` result of a successful [`PetitSet`] insertion operation
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum SuccesfulSetInsertion {
+    /// This is a new element: it is stored at the provided index
+    NovelElenent(usize),
+    /// This element was already in the set: it is stored at the provided index
+    ExtantElement(usize),
 }

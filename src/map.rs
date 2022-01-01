@@ -217,18 +217,26 @@ impl<K, V, const CAP: usize> PetitMap<K, V, CAP> {
 }
 
 impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
-    /// Stores the value into the map, which can be looked up by the key
+    /// Attempts to store the value into the map, which can be looked up by the key
     ///
-    /// Returns Ok(index) at which the key / value pair was inserted if succesful
-    /// or [`Err(InsertionError::Overfull)`] if the map was already full
-    pub fn try_insert(&mut self, key: K, value: V) -> Result<(usize, bool), CapacityError<(K, V)>> {
+    /// Inserts the element if able, then returns the [`Result`] of that operation.
+    /// This is either a [`SuccesfulMapInsertion`] or a [`CapacityError`].
+    pub fn try_insert(
+        &mut self,
+        key: K,
+        mut value: V,
+    ) -> Result<SuccesfulMapInsertion<V>, CapacityError<(K, V)>> {
         if let Some(index) = self.find(&key) {
-            let (_key, old_value) = self.get_at_mut(index).unwrap();
-            *old_value = value;
-            Ok((index, true))
+            let (_key, mut old_value) = self.get_at_mut(index).unwrap();
+
+            // Replace the old value with the new value
+            swap(&mut value, &mut old_value);
+
+            // Returns the old value, as the data was swapped
+            Ok(SuccesfulMapInsertion::ExtantKey(value, index))
         } else if let Some(index) = self.next_empty_index(0) {
             self.storage[index] = Some((key, value));
-            Ok((index, true))
+            Ok(SuccesfulMapInsertion::NovelKey(index))
         } else {
             Err(CapacityError((key, value)))
         }
@@ -236,14 +244,20 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
 
     /// Stores the value in the map, which can be looked up by the key
     ///
+    /// Returns a [`SuccesfulMapInsertion`], which encodes both
+    /// the index at which the element is stored and whether the key was already present.
+    /// If a key was already present, the previous value is also returned.
+    ///
     /// # Panics
     /// Panics if the map was full and the key was a non-duplicate.
-    pub fn insert(&mut self, key: K, value: V) {
-        self.try_insert(key, value)
+    pub fn insert(&mut self, key: K, value: V) -> SuccesfulMapInsertion<V> {
+        let ok_result = self
+            .try_insert(key, value)
             .expect("Inserting this key-value pair would have overflowed the map!");
+        ok_result
     }
 
-    /// Stores the key-value pairs in the map
+    /// Stores mulitple key-value pairs in the map
     ///
     /// # Panics
     /// Panics if the map was full when a non-duplicate key was inserted.
@@ -501,4 +515,13 @@ impl<K: Eq, V: PartialEq, const CAP: usize> PartialEq for PetitMap<K, V, CAP> {
         }
         true
     }
+}
+
+/// The `Ok` result of a successful [`PetitMap`] insertion operation
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum SuccesfulMapInsertion<V> {
+    /// This is a new key: the key-value pair is stored at the provided index
+    NovelKey(usize),
+    /// The key already existed, so the old value and the index were returned
+    ExtantKey(V, usize),
 }

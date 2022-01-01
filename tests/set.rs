@@ -1,7 +1,7 @@
 mod predicates;
 use predicates::is_sorted;
 
-use petitset::{CapacityError, PetitSet};
+use petitset::{CapacityError, PetitSet, SuccesfulSetInsertion};
 
 #[test]
 fn reject_duplicates() {
@@ -15,7 +15,7 @@ fn reject_duplicates() {
     assert!(set.len() == 1);
 
     let result = set.insert(1);
-    assert_eq!(result, (0, false));
+    assert_eq!(result, SuccesfulSetInsertion::ExtantElement(0));
     assert!(set.len() == 1);
 
     set.insert_at(1, 0);
@@ -34,7 +34,10 @@ fn reject_overfull() {
 
     // Duplicates do not overflow
     let duplicate_result = set.try_insert(2);
-    assert_eq!(duplicate_result, Ok((1, false)));
+    assert_eq!(
+        duplicate_result,
+        Ok(SuccesfulSetInsertion::ExtantElement(1))
+    );
     assert!(set.len() == set.capacity());
 
     // Non-duplicates fail to insert

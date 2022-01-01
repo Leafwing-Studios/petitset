@@ -10,10 +10,10 @@
 use core::fmt::{Debug, Formatter, Result};
 
 mod map;
-pub use map::PetitMap;
+pub use map::{PetitMap, SuccesfulMapInsertion};
 
 mod set;
-pub use set::PetitSet;
+pub use set::{PetitSet, SuccesfulSetInsertion};
 
 /// An error returned when attempting to insert into a full [`PetitSet`] or [`PetitMap`].
 ///
