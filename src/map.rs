@@ -226,13 +226,11 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
             let (_key, old_value) = self.get_at_mut(index).unwrap();
             *old_value = value;
             Ok((index, true))
+        } else if let Some(index) = self.next_empty_index(0) {
+            self.storage[index] = Some((key, value));
+            Ok((index, true))
         } else {
-            if let Some(index) = self.next_empty_index(0) {
-                self.storage[index] = Some((key, value));
-                Ok((index, true))
-            } else {
-                Err(CapacityError((key, value)))
-            }
+            Err(CapacityError((key, value)))
         }
     }
 
@@ -270,15 +268,13 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
         if let Some(old_index) = self.find(&key) {
             self.swap_at(old_index, index);
             None
+        } else if self.get_at(index).is_some() {
+            let removed = self.take_at(index);
+            self.storage[index] = Some((key, value));
+            removed
         } else {
-            if self.get_at(index).is_some() {
-                let removed = self.take_at(index);
-                self.storage[index] = Some((key, value));
-                removed
-            } else {
-                self.storage[index] = Some((key, value));
-                None
-            }
+            self.storage[index] = Some((key, value));
+            None
         }
     }
 
@@ -305,7 +301,7 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
     pub fn get(&self, key: &K) -> Option<&V> {
         if let Some(index) = self.find(key) {
             if let Some((_key, value)) = &self.storage[index] {
-                return Some(&value);
+                return Some(value);
             }
         }
         None
@@ -354,11 +350,8 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
     ///
     /// Returns true if both keys were found and succesfully swapped.
     pub fn swap(&mut self, key_a: &K, key_b: &K) -> bool {
-        let maybe_a = self.find(key_a);
-        let maybe_b = self.find(key_b);
-
-        if maybe_a.is_some() & maybe_b.is_some() {
-            self.swap_at(maybe_a.unwrap(), maybe_b.unwrap());
+        if let (Some(index_a), Some(index_b)) = (self.find(key_a), self.find(key_b)) {
+            self.swap_at(index_a, index_b);
             true
         } else {
             false
@@ -419,11 +412,9 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
 
             let element = fused_iter.next();
             if let Some((key, _value)) = &element {
-                for e in init_data {
-                    if let Some((init_key, _init_value)) = e {
-                        if *key == *init_key {
-                            continue;
-                        }
+                for (init_key, _init_value) in init_data.iter().flatten() {
+                    if *key == *init_key {
+                        continue;
                     }
                 }
             }

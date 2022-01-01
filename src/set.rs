@@ -263,10 +263,7 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     /// If this occurs, the [`PetitSet`] returned may behave unpredictably.
     pub fn from_raw_array_unchecked(values: [Option<T>; CAP]) -> Self {
         // Convert from Option<T> to the required Option<(T, ())>
-        let values_for_map = values.map(|v| match v {
-            Some(v) => Some((v, ())),
-            None => None,
-        });
+        let values_for_map = values.map(|v| v.map(|v| (v, ())));
 
         Self {
             map: PetitMap::from_raw_array_unchecked(values_for_map),
