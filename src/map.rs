@@ -26,17 +26,100 @@ use core::mem::swap;
 /// The maximum size of this type is given by the const-generic type parameter `CAP`.
 /// Keys are guaranteed to be unique.
 #[derive(Clone, Debug)]
-pub struct PetitMap<K: Eq, V, const CAP: usize> {
+pub struct PetitMap<K, V, const CAP: usize> {
     keys: PetitSet<K, CAP>,
     values: [Option<V>; CAP],
 }
 
-impl<K: Eq, V: Copy, const CAP: usize> Default for PetitMap<K, V, CAP> {
+impl<K, V: Copy, const CAP: usize> Default for PetitMap<K, V, CAP> {
     fn default() -> Self {
         Self {
             keys: PetitSet::default(),
             values: [None; CAP],
         }
+    }
+}
+
+impl<K, V, const CAP: usize> PetitMap<K, V, CAP> {
+    /// Returns a reference to the value at the provided index.
+    ///
+    /// Returns `Some((K, V))` if the index is in-bounds and has an element.
+    ///
+    /// # Panics
+    /// Panics if the provided index is larger than CAP.
+    pub fn get_at(&self, index: usize) -> Option<(&K, &V)> {
+        assert!(index <= CAP);
+
+        self.values[index]
+            .as_ref()
+            .map(|value| (*self.keys.get_at(index).as_ref().unwrap(), value))
+    }
+
+    /// Returns a mutable reference to the value at the provided index.
+    ///
+    /// Returns `Some((&mut K, &mut V))` if the index is in-bounds and has an element
+    ///
+    /// # Panics
+    /// Panics if the provided index is larger than CAP.
+    pub fn get_at_mut(&mut self, index: usize) -> Option<(&mut K, &mut V)> {
+        assert!(index <= CAP);
+
+        if let Some(value) = &mut self.values[index] {
+            Some((self.keys.get_at_mut(index).unwrap(), value))
+        } else {
+            None
+        }
+    }
+
+    /// Removes the element at the provided index
+    ///
+    /// Returns true if an element was found
+    ///
+    /// # Panics
+    /// Panics if the provided index is larger than CAP.
+    pub fn remove_at(&mut self, index: usize) -> bool {
+        self.take_at(index).is_some()
+    }
+
+    /// Removes the key-value pair at the provided index
+    ///
+    /// Returns `Some((K, V))` if the index was full.
+    ///
+    /// # Panics
+    /// Panics if the provided index is larger than CAP.
+    #[must_use = "Use remove_at if the value is not needed."]
+    pub fn take_at(&mut self, index: usize) -> Option<(K, V)> {
+        assert!(index <= CAP);
+
+        if let Some(key) = self.keys.take_at(index) {
+            let mut removed = None;
+            swap(&mut removed, &mut self.values[index]);
+
+            // Every key must have a value:
+            // if this panicked we had a malformed map
+            Some((key, removed.unwrap()))
+        } else {
+            None
+        }
+    }
+
+    /// An iterator visiting all keys in in a first-in, first-out order
+    pub fn keys(&self) -> impl Iterator<Item = &K> {
+        self.keys.iter()
+    }
+
+    /// An iterator visiting all values in in a first-in, first-out order
+    ///
+    /// The item type is a `&'a V`
+    pub fn values(&self) -> impl Iterator<Item = &V> {
+        self.values.iter().filter_map(|e| e.as_ref())
+    }
+
+    /// An iterator visiting all values in in a first-in, first-out order
+    ///
+    /// The item type is a `&'a mut V`
+    pub fn values_mut(&mut self) -> impl Iterator<Item = &mut V> {
+        self.values.iter_mut().filter_map(|e| e.as_mut())
     }
 }
 
@@ -103,36 +186,6 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
         None
     }
 
-    /// Returns a reference to the value at the provided index.
-    ///
-    /// Returns `Some((K, V))` if the index is in-bounds and has an element.
-    ///
-    /// # Panics
-    /// Panics if the provided index is larger than CAP.
-    pub fn get_at(&self, index: usize) -> Option<(&K, &V)> {
-        assert!(index <= CAP);
-
-        self.values[index]
-            .as_ref()
-            .map(|value| (*self.keys.get_at(index).as_ref().unwrap(), value))
-    }
-
-    /// Returns a mutable reference to the value at the provided index.
-    ///
-    /// Returns `Some((&mut K, &mut V))` if the index is in-bounds and has an element
-    ///
-    /// # Panics
-    /// Panics if the provided index is larger than CAP.
-    pub fn get_at_mut(&mut self, index: usize) -> Option<(&mut K, &mut V)> {
-        assert!(index <= CAP);
-
-        if let Some(value) = &mut self.values[index] {
-            Some((self.keys.get_at_mut(index).unwrap(), value))
-        } else {
-            None
-        }
-    }
-
     /// Removes the key-value pair from the map if the key is found
     ///
     /// Returns `Some((index))` if it was found
@@ -144,16 +197,6 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
         } else {
             None
         }
-    }
-
-    /// Removes the element at the provided index
-    ///
-    /// Returns true if an element was found
-    ///
-    /// # Panics
-    /// Panics if the provided index is larger than CAP.
-    pub fn remove_at(&mut self, index: usize) -> bool {
-        self.take_at(index).is_some()
     }
 
     /// Removes and returns the key-value pair from the map if the key is found
@@ -168,47 +211,6 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
         } else {
             None
         }
-    }
-
-    /// Removes the key-value pair at the provided index
-    ///
-    /// Returns `Some((K, V))` if the index was full.
-    ///
-    /// # Panics
-    /// Panics if the provided index is larger than CAP.
-    #[must_use = "Use remove_at if the value is not needed."]
-    pub fn take_at(&mut self, index: usize) -> Option<(K, V)> {
-        assert!(index <= CAP);
-
-        if let Some(key) = self.keys.take_at(index) {
-            let mut removed = None;
-            swap(&mut removed, &mut self.values[index]);
-
-            // Every key must have a value:
-            // if this panicked we had a malformed map
-            Some((key, removed.unwrap()))
-        } else {
-            None
-        }
-    }
-
-    /// An iterator visiting all keys in in a first-in, first-out order
-    pub fn keys(&self) -> impl Iterator<Item = &K> {
-        self.keys.iter()
-    }
-
-    /// An iterator visiting all values in in a first-in, first-out order
-    ///
-    /// The item type is a `&'a V`
-    pub fn values(&self) -> impl Iterator<Item = &V> {
-        self.values.iter().filter_map(|e| e.as_ref())
-    }
-
-    /// An iterator visiting all values in in a first-in, first-out order
-    ///
-    /// The item type is a `&'a mut V`
-    pub fn values_mut(&mut self) -> impl Iterator<Item = &mut V> {
-        self.values.iter_mut().filter_map(|e| e.as_mut())
     }
 }
 

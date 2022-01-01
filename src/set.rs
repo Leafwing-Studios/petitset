@@ -21,49 +21,17 @@ use core::mem::swap;
 /// The maximum size of this type is given by the const-generic type parameter `CAP`.
 /// Entries in this structure are guaranteed to be unique.
 #[derive(Debug, Clone, Eq)]
-pub struct PetitSet<T: Eq, const CAP: usize> {
+pub struct PetitSet<T, const CAP: usize> {
     storage: [Option<T>; CAP],
 }
 
-impl<T: Eq, const CAP: usize> Default for PetitSet<T, CAP> {
+impl<T, const CAP: usize> Default for PetitSet<T, CAP> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
-    /// Create a new empty [`PetitSet`].
-    ///
-    /// The capacity is given by the generic parameter `CAP`.
-    pub fn new() -> Self {
-        use core::mem::MaybeUninit;
-        // This use of assume_init() is to get us an uninitialized array.
-        // This is safe because the arrays contents are all MaybeUninit. Taken
-        // from the docs for MaybeUninit.
-        //
-        // BLOCKED: use uninit_array() &co once they are stabilized.
-        let mut data: [MaybeUninit<Option<T>>; CAP] =
-            unsafe { MaybeUninit::uninit().assume_init() };
-
-        for element in data.iter_mut() {
-            element.write(None);
-        }
-
-        PetitSet {
-            storage: unsafe { data.map(|u| u.assume_init()) },
-        }
-    }
-
-    /// Returns the current number of elements in the [`PetitSet`]
-    pub fn len(&self) -> usize {
-        self.storage.iter().filter(|e| e.is_some()).count()
-    }
-
-    /// Returns an iterator over the elements of the [`PetitSet`]
-    pub fn iter(&self) -> impl Iterator<Item = &T> {
-        self.storage.iter().filter_map(|e| e.as_ref())
-    }
-
+impl<T, const CAP: usize> PetitSet<T, CAP> {
     /// Returns the index of the next filled slot, if any
     ///
     /// Returns None if the cursor is larger than CAP
@@ -96,16 +64,48 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
         None
     }
 
+    /// Create a new empty [`PetitSet`].
+    ///
+    /// The capacity is given by the generic parameter `CAP`.
+    pub fn new() -> Self {
+        use core::mem::MaybeUninit;
+        // This use of assume_init() is to get us an uninitialized array.
+        // This is safe because the arrays contents are all MaybeUninit. Taken
+        // from the docs for MaybeUninit.
+        //
+        // BLOCKED: use uninit_array() &co once they are stabilized.
+        let mut data: [MaybeUninit<Option<T>>; CAP] =
+            unsafe { MaybeUninit::uninit().assume_init() };
+
+        for element in data.iter_mut() {
+            element.write(None);
+        }
+
+        PetitSet {
+            storage: unsafe { data.map(|u| u.assume_init()) },
+        }
+    }
+
     /// Return the capacity of the [`PetitSet`]
     #[must_use]
     pub fn capacity(&self) -> usize {
         CAP
     }
 
+    /// Returns the current number of elements in the [`PetitSet`]
+    pub fn len(&self) -> usize {
+        self.storage.iter().filter(|e| e.is_some()).count()
+    }
+
     /// Are there exactly 0 elements in the [`PetitSet`]?
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    /// Returns an iterator over the elements of the [`PetitSet`]
+    pub fn iter(&self) -> impl Iterator<Item = &T> {
+        self.storage.iter().filter_map(|e| e.as_ref())
     }
 
     /// Returns a reference to the provided index of the underlying array
@@ -132,6 +132,40 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
         }
     }
 
+    /// Removes all elements from the set without allocation
+    pub fn clear(&mut self) {
+        for element in self.storage.iter_mut() {
+            *element = None;
+        }
+    }
+
+    /// Removes the element at the provided index
+    ///
+    /// Returns true if an element was found
+    ///
+    /// # Panics
+    /// Panics if the provided index is larger than CAP.
+    pub fn remove_at(&mut self, index: usize) -> bool {
+        self.take_at(index).is_some()
+    }
+
+    /// Removes the element at the provided index
+    ///
+    /// Returns `Some(T)` if an element was found at that index, or `None` if no element was there.
+    ///
+    /// # Panics
+    /// Panics if the provided index is larger than CAP.
+    #[must_use = "Use remove_at if the value is not needed."]
+    pub fn take_at(&mut self, index: usize) -> Option<T> {
+        assert!(index <= CAP);
+
+        let mut removed = None;
+        swap(&mut removed, &mut self.storage[index]);
+        removed
+    }
+}
+
+impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     /// Returns the index for the provided element, if it exists in the set
     pub fn find(&self, element: &T) -> Option<usize> {
         for index in 0..CAP {
@@ -203,13 +237,6 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
         Ok(())
     }
 
-    /// Removes all elements from the set without allocation
-    pub fn clear(&mut self) {
-        for element in self.storage.iter_mut() {
-            *element = None;
-        }
-    }
-
     /// Removes the element from the set, if it exists
     ///
     /// Returns `Some(index)` if the element was found, or `None` if no matching element is found
@@ -222,16 +249,6 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
         }
     }
 
-    /// Removes the element at the provided index
-    ///
-    /// Returns true if an element was found
-    ///
-    /// # Panics
-    /// Panics if the provided index is larger than CAP.
-    pub fn remove_at(&mut self, index: usize) -> bool {
-        self.take_at(index).is_some()
-    }
-
     /// Removes an element from the set, if it exists, returning
     /// both the value that compared equal and the index at which
     /// it was stored.
@@ -242,21 +259,6 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
         } else {
             None
         }
-    }
-
-    /// Removes the element at the provided index
-    ///
-    /// Returns `Some(T)` if an element was found at that index, or `None` if no element was there.
-    ///
-    /// # Panics
-    /// Panics if the provided index is larger than CAP.
-    #[must_use = "Use remove_at if the value is not needed."]
-    pub fn take_at(&mut self, index: usize) -> Option<T> {
-        assert!(index <= CAP);
-
-        let mut removed = None;
-        swap(&mut removed, &mut self.storage[index]);
-        removed
     }
 
     /// Insert a new element to the set at the provided index
