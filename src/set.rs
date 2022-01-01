@@ -282,7 +282,9 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     ///
     /// The consumed values will be stored in order, with duplicate elements discarded.
     ///
-    /// Returns an error if the iterator produces more than `CAP` distinct elements.
+    /// Returns an error if the iterator produces more than `CAP` distinct elements. The
+    /// returned error will include both the element that could not be inserted, and
+    /// a PetitSet containing all elements up to that point.
     ///
     /// ```
     /// use petitset::CapacityError;
@@ -293,12 +295,67 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     /// assert_eq!(set, Ok(PetitSet::from_raw_array_unchecked([Some(1), Some(2), Some(4), Some(3), None])));
     ///
     /// let failed = PetitSet::<_, 3>::try_from_iter(elems.iter().copied());
-    /// assert_eq!(failed, Err(CapacityError(3)))
+    /// assert_eq!(failed, Err(CapacityError((PetitSet::from_raw_array_unchecked([Some(1), Some(2), Some(4)]), 3))));
     /// ```
-    pub fn try_from_iter<I: IntoIterator<Item = T>>(iter: I) -> Result<Self, CapacityError<T>> {
-        let mut set: PetitSet<T, CAP> = PetitSet::default();
-        for element in iter {
-            set.try_insert(element)?;
+    pub fn try_from_iter<I: IntoIterator<Item = T>>(
+        value_iter: I,
+    ) -> Result<Self, CapacityError<(Self, T)>> {
+        use core::{mem::MaybeUninit, ptr, slice};
+
+        // This use of assume_init() is to get us an uninitialized array.
+        // This is safe because the arrays contents are all MaybeUninit. Taken
+        // from the docs for MaybeUninit.
+        //
+        // BLOCKED: use uninit_array() &co once they are stabilized.
+        let mut uninit_data: [MaybeUninit<Option<T>>; CAP] =
+            unsafe { MaybeUninit::uninit().assume_init() };
+
+        // init_data will track which elements have been initialized so far, so
+        // that we can scan for duplicates. This initialization is safe because
+        // uninit_data is properly aligned for [Option<T>], and initialization
+        // does not matter because the length is 0.
+        let mut init_data: &[Option<T>] =
+            unsafe { slice::from_raw_parts(uninit_data[0].as_ptr(), 0) };
+
+        // Each iteration of this loop will initialize the element past the end of
+        // init_data, then extend init_data to cover the newly-initialized element
+        // and advance uninit_data by one. The invariants at each iteration are:
+        //
+        // - init_data contains only initialized data.
+        // - init_data is a prefix of uninit_data.
+        //
+        // This mess is to avoid borrow checker issues checking for duplicates while
+        // mutating the array.
+        let mut value_iter = value_iter.into_iter().fuse();
+        while init_data.len() < uninit_data.len() {
+            let index = init_data.len();
+
+            let value = value_iter.next();
+            if value.is_some() && init_data.contains(&value) {
+                continue;
+            }
+
+            // We are no longer using the current value of init_data, so we can safely
+            // write to the next element.
+            uninit_data[index].write(value);
+
+            // This is safe because the element one past init_data was just initialized.
+            init_data = unsafe { slice::from_raw_parts(uninit_data[0].as_ptr(), index + 1) }
+        }
+
+        assert_eq!(init_data.len(), CAP);
+        let set = PetitSet {
+            storage: unsafe {
+                // This is safe because we just checked the length.
+                ptr::read(init_data as *const [Option<T>] as *const [Option<T>; CAP])
+            },
+        };
+
+        // Now check for any additional distinct elements in the rest of the iterator.
+        for value in value_iter {
+            if !set.contains(&value) {
+                return Err(CapacityError((set, value)));
+            }
         }
         Ok(set)
     }
