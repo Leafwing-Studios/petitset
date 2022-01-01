@@ -122,7 +122,7 @@ impl<T, const CAP: usize> PetitSet<T, CAP> {
         self.map.take_at(index).map(|(k, _v)| k)
     }
 
-    /// Swaps the element in index_a with the element in index_b
+    /// Swaps the element in `index_a` with the element in `index_b`
     ///
     /// # Panics
     ///
@@ -225,7 +225,7 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
         self.map.take(element).map(|(i, v)| (i, v.0))
     }
 
-    /// Swaps the positions of element_a with the position of element_b
+    /// Swaps the positions of `element_a` with the position of `element_b`
     ///
     /// Returns true if both elements were found and succesfully swapped.
     pub fn swap(&mut self, element_a: &T, element_b: &T) -> bool {

@@ -196,7 +196,7 @@ impl<K, V, const CAP: usize> PetitMap<K, V, CAP> {
         self.len() == CAP
     }
 
-    /// Swaps the element in index_a with the element in index_b
+    /// Swaps the element in `index_a` with the element in `index_b`
     ///
     /// # Panics
     ///
@@ -358,7 +358,7 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
         }
     }
 
-    /// Swaps the positions of element_a with the position of element_b
+    /// Swaps the positions of `element_a` with the position of `element_b`
     ///
     /// Returns true if both keys were found and succesfully swapped.
     pub fn swap(&mut self, key_a: &K, key_b: &K) -> bool {
