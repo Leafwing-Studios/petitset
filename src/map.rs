@@ -227,10 +227,10 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
         mut value: V,
     ) -> Result<SuccesfulMapInsertion<V>, CapacityError<(K, V)>> {
         if let Some(index) = self.find(&key) {
-            let (_key, mut old_value) = self.get_at_mut(index).unwrap();
+            let (_key, old_value) = self.get_at_mut(index).unwrap();
 
             // Replace the old value with the new value
-            swap(&mut value, &mut old_value);
+            swap(&mut value, old_value);
 
             // Returns the old value, as the data was swapped
             Ok(SuccesfulMapInsertion::ExtantKey(value, index))
@@ -251,10 +251,8 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
     /// # Panics
     /// Panics if the map was full and the key was a non-duplicate.
     pub fn insert(&mut self, key: K, value: V) -> SuccesfulMapInsertion<V> {
-        let ok_result = self
-            .try_insert(key, value)
-            .expect("Inserting this key-value pair would have overflowed the map!");
-        ok_result
+        self.try_insert(key, value)
+            .expect("Inserting this key-value pair would have overflowed the map!")
     }
 
     /// Stores mulitple key-value pairs in the map
