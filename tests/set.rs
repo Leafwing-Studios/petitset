@@ -1,7 +1,7 @@
 mod predicates;
 use predicates::is_sorted;
 
-use petitset::{InsertionError, PetitSet};
+use petitset::{CapacityError, PetitSet};
 
 #[test]
 fn reject_duplicates() {
@@ -14,8 +14,8 @@ fn reject_duplicates() {
     set.insert(1);
     assert!(set.len() == 1);
 
-    let result = set.try_insert(1);
-    assert_eq!(result, Err(InsertionError::Duplicate(0)));
+    let result = set.insert(1);
+    assert_eq!(result, (0, false));
     assert!(set.len() == 1);
 
     set.insert_at(1, 0);
@@ -29,17 +29,17 @@ fn reject_duplicates() {
 fn reject_overfull() {
     let mut set: PetitSet<u8, 2> = PetitSet::default();
 
-    set.insert_multiple(1..=2);
+    set.extend(1..=2);
     assert!(set.len() == set.capacity());
 
     // Duplicates do not overflow
     let duplicate_result = set.try_insert(2);
-    assert_eq!(duplicate_result, Err(InsertionError::Duplicate(1)));
+    assert_eq!(duplicate_result, Ok((1, false)));
     assert!(set.len() == set.capacity());
 
     // Non-duplicates fail to insert
     let overfull_result = set.try_insert(3);
-    assert_eq!(overfull_result, Err(InsertionError::Overfull));
+    assert_eq!(overfull_result, Err(CapacityError(3)));
     assert!(set.len() == set.capacity());
 }
 
@@ -48,7 +48,7 @@ fn reject_overfull() {
 fn panic_on_overfull_insertion() {
     let mut set: PetitSet<u8, 2> = PetitSet::default();
 
-    set.insert_multiple(1..=2);
+    set.extend(1..=2);
     assert!(set.len() == set.capacity());
 
     set.insert(3);
@@ -57,7 +57,7 @@ fn panic_on_overfull_insertion() {
 #[test]
 fn in_order_iteration() {
     let mut set: PetitSet<u8, 8> = PetitSet::default();
-    set.insert_multiple(0..8);
+    set.extend(0..8);
     assert!(is_sorted(&set));
 
     set.remove_at(3);
@@ -73,23 +73,23 @@ fn in_order_iteration() {
     assert!(is_sorted(&set));
 
     let mut backwards_set: PetitSet<u8, 8> = PetitSet::default();
-    backwards_set.insert_multiple((0..8).rev());
+    backwards_set.extend((0..8).rev());
     assert!(!is_sorted(&backwards_set));
 }
 
 #[test]
 fn equality_ignores_order() {
     let mut set_1: PetitSet<u8, 16> = PetitSet::default();
-    set_1.insert_multiple(7..=11);
+    set_1.extend(7..=11);
 
-    let set_2: PetitSet<u8, 16> = PetitSet::from_iter((7..=11).rev());
+    let set_2: PetitSet<u8, 16> = PetitSet::try_from_iter((7..=11).rev()).unwrap();
     assert_eq!(set_1, set_2);
 }
 
 #[test]
 fn removal_returns_items() {
     let mut set: PetitSet<u8, 8> = PetitSet::default();
-    set.insert_multiple(0..8);
+    set.extend(0..8);
 
     let index = set.remove(&3).unwrap();
     assert_eq!(index, 3);
@@ -101,7 +101,7 @@ fn removal_returns_items() {
 #[test]
 fn remove_and_insert_in_same_place() {
     let mut set: PetitSet<u8, 8> = PetitSet::default();
-    set.insert_multiple(0..8);
+    set.extend(0..8);
     assert!(is_sorted(&set));
 
     set.remove(&3);

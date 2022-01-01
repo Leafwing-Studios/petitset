@@ -1,6 +1,6 @@
 //! A module for the [`PetitMap`] data structure
 use crate::set::PetitSet;
-use crate::InsertionError;
+use crate::CapacityError;
 use core::mem::swap;
 
 /// A map-like data structure with a fixed maximum size
@@ -45,23 +45,14 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
     ///
     /// Returns Ok(index) at which the key / value pair was inserted if succesful
     /// or [`Err(InsertionError::Overfull)`] if the map was already full
-    pub fn try_insert(&mut self, key: K, value: V) -> Result<usize, InsertionError> {
+    pub fn try_insert(&mut self, key: K, value: V) -> Result<(usize, bool), CapacityError<(K, V)>> {
         match self.keys.try_insert(key) {
             // No duplicate, so insert a fresh value
-            Ok(index) => {
+            Ok((index, success)) => {
                 self.values[index] = Some(value);
-                Ok(index)
+                Ok((index, success))
             }
-            Err(error) => match error {
-                // Duplicates will overwrite existing value,
-                // but key will be unmodified
-                InsertionError::Duplicate(index) => {
-                    self.values[index] = Some(value);
-                    Ok(index)
-                }
-                // If we're out of space, this simply fails
-                InsertionError::Overfull => Err(InsertionError::Overfull),
-            },
+            Err(CapacityError(key)) => Err(CapacityError((key, value))),
         }
     }
 
@@ -70,7 +61,7 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
     /// # Panics
     /// Panics if the map was full and the key was a non-duplicate.
     pub fn insert(&mut self, key: K, value: V) {
-        self.try_insert(key, value).unwrap();
+        self.try_insert(key, value).ok().unwrap();
     }
 
     /// Stores the key-value pairs in the map

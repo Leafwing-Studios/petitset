@@ -1,6 +1,6 @@
 //! A module for the [`PetitSet`] data structure
 
-use crate::InsertionError;
+use crate::CapacityError;
 use core::mem::swap;
 
 /// A set-like data structure with a fixed maximum size
@@ -105,7 +105,7 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     /// Are there exactly 0 elements in the [`PetitSet`]?
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.storage.len() == 0
+        self.len() == 0
     }
 
     /// Returns a reference to the provided index of the underlying array
@@ -150,42 +150,57 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
         self.find(element).is_some()
     }
 
-    /// Attempt to insert a new element to the set
+    /// Attempt to insert a new element to the set in the first available slot.
     ///
-    /// Returns Ok(index) if this succeeds, or an error if this failed due to either capacity or a duplicate entry.
-    pub fn try_insert(&mut self, element: T) -> Result<usize, InsertionError> {
+    /// Returns the index of the element along with either true if the value was or false if it was already present.
+    ///
+    /// Returns a `CapacityError` if the element is not already present and the set is full.
+    pub fn try_insert(&mut self, element: T) -> Result<(usize, bool), CapacityError<T>> {
         if let Some(index) = self.find(&element) {
-            return Err(InsertionError::Duplicate(index));
+            return Ok((index, false));
         }
 
         if let Some(index) = self.next_empty_index(0) {
             self.storage[index] = Some(element);
-            Ok(index)
+            Ok((index, true))
         } else {
-            Err(InsertionError::Overfull)
+            Err(CapacityError(element))
         }
     }
 
-    /// Insert a new element to the set
+    /// Insert a new element to the set in the first available slot
+    ///
+    /// Returns the index of the element along with either true if the value was or false if it was already present.
     ///
     /// # Panics
     /// Panics if the set is full and the item is not a duplicate
-    pub fn insert(&mut self, element: T) {
-        // Always insert
-        if let Err(InsertionError::Overfull) = self.try_insert(element) {
-            // But panic if the set was full
-            panic!("Inserting this element would have overflowed the set!")
-        }
+    pub fn insert(&mut self, element: T) -> (usize, bool) {
+        self.try_insert(element)
+            .ok()
+            .expect("Inserting this element would have overflowed the set!")
     }
 
-    /// Inserts multiple new elements to the set
+    /// Inserts multiple new elements to the set. Duplicate elements are discarded.
     ///
     /// # Panics
     /// Panics if the set would overflow due to the insertion of non-duplicate items
-    pub fn insert_multiple(&mut self, elements: impl IntoIterator<Item = T>) {
+    pub fn extend(&mut self, elements: impl IntoIterator<Item = T>) {
         for element in elements {
             self.insert(element);
         }
+    }
+
+    /// Inserts multiple new elements to the set. Duplicate elements are discarded.
+    ///
+    /// Returns a `CapacityError` if the extension cannot be completed because the set is full.
+    pub fn try_extend(
+        &mut self,
+        elements: impl IntoIterator<Item = T>,
+    ) -> Result<(), CapacityError<T>> {
+        for element in elements {
+            self.try_insert(element)?;
+        }
+        Ok(())
     }
 
     /// Removes all elements from the set without allocation
@@ -262,6 +277,49 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
         swap(&mut element, &mut self.storage[index]);
         element
     }
+
+    /// Constructs a new `PetitSet` by consuming values from an iterator.
+    ///
+    /// The consumed values will be stored in order, with duplicate elements discarded.
+    ///
+    /// Returns an error if the iterator produces more than `CAP` distinct elements.
+    ///
+    /// ```
+    /// use petitset::CapacityError;
+    /// use petitset::PetitSet;
+    ///
+    /// let elems = vec![1, 2, 1, 4, 3, 1];
+    /// let set = PetitSet::<_, 5>::try_from_iter(elems.iter().copied());
+    /// assert_eq!(set, Ok(PetitSet::from_raw_array_unchecked([Some(1), Some(2), Some(4), Some(3), None])));
+    ///
+    /// let failed = PetitSet::<_, 3>::try_from_iter(elems.iter().copied());
+    /// assert_eq!(failed, Err(CapacityError(3)))
+    /// ```
+    pub fn try_from_iter<I: IntoIterator<Item = T>>(iter: I) -> Result<Self, CapacityError<T>> {
+        let mut set: PetitSet<T, CAP> = PetitSet::default();
+        for element in iter {
+            set.try_insert(element)?;
+        }
+        Ok(set)
+    }
+
+    /// Construct a PetitSet directly from an array, without checking for duplicates.
+    ///
+    /// It is a logic error if any two non-`None` values in the array compare equal. If this occurs, the `PetitSet` returned may behave unpredictably.
+    pub fn from_raw_array_unchecked(values: [Option<T>; CAP]) -> Self {
+        Self { storage: values }
+    }
+}
+
+impl<T: Eq, const CAP: usize> FromIterator<T> for PetitSet<T, CAP> {
+    /// Panics if the iterator contains more than `CAP` distinct elements.
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut set: PetitSet<T, CAP> = PetitSet::default();
+        for element in iter {
+            set.insert(element);
+        }
+        set
+    }
 }
 
 impl<T: Eq, const CAP: usize> IntoIterator for PetitSet<T, CAP> {
@@ -295,16 +353,6 @@ impl<T: Eq, const CAP: usize> Iterator for PetitSetIter<T, CAP> {
             self.cursor = CAP;
             None
         }
-    }
-}
-
-impl<T: Eq, const CAP: usize> FromIterator<T> for PetitSet<T, CAP> {
-    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
-        let mut set: PetitSet<T, CAP> = PetitSet::default();
-        for element in iter {
-            set.insert(element);
-        }
-        set
     }
 }
 
