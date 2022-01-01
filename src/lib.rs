@@ -7,6 +7,8 @@
 #![no_std]
 #![deny(missing_docs)]
 
+use core::fmt::{Debug, Formatter, Result};
+
 mod map;
 pub use map::PetitMap;
 
@@ -16,5 +18,12 @@ pub use set::PetitSet;
 /// An error returned when attempting to insert into a full [`PetitSet`] or [`PetitMap`].
 ///
 /// It contains the element that could not be inserted.
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub struct CapacityError<T>(pub T);
+
+impl<T> Debug for CapacityError<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        f.debug_struct("A `PetitSet` or `PetitMap` has overflowed.")
+            .finish()
+    }
+}

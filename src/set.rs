@@ -1,13 +1,15 @@
 //! A module for the [`PetitSet`] data structure
 
 use crate::CapacityError;
-use core::mem::swap;
+use crate::PetitMap;
 
 /// A set-like data structure with a fixed maximum size
 ///
 /// This data structure does not require the [`Hash`] or [`Ord`] traits,
 /// and instead uses linear iteration to find entries.
 /// Iteration order is guaranteed to be stable, and elements are not re-compressed upon removal.
+///
+/// Under the hood, this is a [`PetitMap<T, (), CAP>`].
 ///
 /// Principally, this data structure should be used for relatively small sets,
 /// where iteration performance, stable-order, stack-allocation and uniqueness
@@ -20,9 +22,9 @@ use core::mem::swap;
 ///
 /// The maximum size of this type is given by the const-generic type parameter `CAP`.
 /// Entries in this structure are guaranteed to be unique.
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Clone)]
 pub struct PetitSet<T, const CAP: usize> {
-    storage: [Option<T>; CAP],
+    map: PetitMap<T, (), CAP>,
 }
 
 impl<T, const CAP: usize> Default for PetitSet<T, CAP> {
@@ -32,111 +34,71 @@ impl<T, const CAP: usize> Default for PetitSet<T, CAP> {
 }
 
 impl<T, const CAP: usize> PetitSet<T, CAP> {
+    /// Create a new empty [`PetitSet`].
+    ///
+    /// The capacity is given by the generic parameter `CAP`.
+    pub fn new() -> Self {
+        Self {
+            map: PetitMap::new(),
+        }
+    }
+
     /// Returns the index of the next filled slot, if any
     ///
     /// Returns None if the cursor is larger than CAP
     pub fn next_filled_index(&self, cursor: usize) -> Option<usize> {
-        if cursor >= CAP {
-            return None;
-        }
-
-        for i in cursor..CAP {
-            if self.storage[i].is_some() {
-                return Some(i);
-            }
-        }
-        None
+        self.map.next_filled_index(cursor)
     }
 
     /// Returns the index of the next empty slot, if any
     ///
     /// Returns None if the cursor is larger than CAP
     pub fn next_empty_index(&self, cursor: usize) -> Option<usize> {
-        if cursor >= CAP {
-            return None;
-        }
-
-        for i in cursor..CAP {
-            if self.storage[i].is_none() {
-                return Some(i);
-            }
-        }
-        None
-    }
-
-    /// Create a new empty [`PetitSet`].
-    ///
-    /// The capacity is given by the generic parameter `CAP`.
-    pub fn new() -> Self {
-        use core::mem::MaybeUninit;
-        // This use of assume_init() is to get us an uninitialized array.
-        // This is safe because the arrays contents are all MaybeUninit. Taken
-        // from the docs for MaybeUninit.
-        //
-        // BLOCKED: use uninit_array() &co once they are stabilized.
-        let mut data: [MaybeUninit<Option<T>>; CAP] =
-            unsafe { MaybeUninit::uninit().assume_init() };
-
-        for element in data.iter_mut() {
-            element.write(None);
-        }
-
-        PetitSet {
-            storage: unsafe { data.map(|u| u.assume_init()) },
-        }
+        self.map.next_empty_index(cursor)
     }
 
     /// Return the capacity of the [`PetitSet`]
-    #[must_use]
     pub fn capacity(&self) -> usize {
         CAP
     }
 
     /// Returns the current number of elements in the [`PetitSet`]
     pub fn len(&self) -> usize {
-        self.storage.iter().filter(|e| e.is_some()).count()
+        self.map.len()
     }
 
     /// Are there exactly 0 elements in the [`PetitSet`]?
-    #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.map.is_empty()
+    }
+
+    /// Are there exactly CAP elements in the [`PetitSet`]?
+    pub fn is_full(&self) -> bool {
+        self.map.is_full()
     }
 
     /// Returns an iterator over the elements of the [`PetitSet`]
     pub fn iter(&self) -> impl Iterator<Item = &T> {
-        self.storage.iter().filter_map(|e| e.as_ref())
+        self.map.iter().map(|(k, _v)| k)
     }
 
     /// Returns a reference to the provided index of the underlying array
     ///
     /// Returns `Some(&T)` if the index is in-bounds and has an element
-    #[must_use]
     pub fn get_at(&self, index: usize) -> Option<&T> {
-        if let Some(reference) = &self.storage[index] {
-            Some(reference)
-        } else {
-            None
-        }
+        self.map.get_at(index).map(|(k, _v)| k)
     }
 
     /// Returns a mutable reference to the provided index of the underlying array
     ///
     /// Returns `Some(&mut T)` if the index is in-bounds and has an element
-    #[must_use]
     pub fn get_at_mut(&mut self, index: usize) -> Option<&mut T> {
-        if let Some(reference) = &mut self.storage[index] {
-            Some(reference)
-        } else {
-            None
-        }
+        self.map.get_at_mut(index).map(|(k, _v)| k)
     }
 
     /// Removes all elements from the set without allocation
     pub fn clear(&mut self) {
-        for element in self.storage.iter_mut() {
-            *element = None;
-        }
+        self.map.clear()
     }
 
     /// Removes the element at the provided index
@@ -157,25 +119,23 @@ impl<T, const CAP: usize> PetitSet<T, CAP> {
     /// Panics if the provided index is larger than CAP.
     #[must_use = "Use remove_at if the value is not needed."]
     pub fn take_at(&mut self, index: usize) -> Option<T> {
-        assert!(index <= CAP);
+        self.map.take_at(index).map(|(k, _v)| k)
+    }
 
-        let mut removed = None;
-        swap(&mut removed, &mut self.storage[index]);
-        removed
+    /// Swaps the element in index_a with the element in index_b
+    ///
+    /// # Panics
+    ///
+    /// Panics if either index is greater than CAP.
+    pub fn swap_at(&mut self, index_a: usize, index_b: usize) {
+        self.map.swap_at(index_a, index_b);
     }
 }
 
 impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     /// Returns the index for the provided element, if it exists in the set
     pub fn find(&self, element: &T) -> Option<usize> {
-        for index in 0..CAP {
-            if let Some(existing_element) = &self.storage[index] {
-                if *element == *existing_element {
-                    return Some(index);
-                }
-            }
-        }
-        None
+        self.map.find(element)
     }
 
     /// Is the provided element in the set?
@@ -190,15 +150,9 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     ///
     /// Returns a `CapacityError` if the element is not already present and the set is full.
     pub fn try_insert(&mut self, element: T) -> Result<(usize, bool), CapacityError<T>> {
-        if let Some(index) = self.find(&element) {
-            return Ok((index, false));
-        }
-
-        if let Some(index) = self.next_empty_index(0) {
-            self.storage[index] = Some(element);
-            Ok((index, true))
-        } else {
-            Err(CapacityError(element))
+        match self.map.try_insert(element, ()) {
+            Ok(data) => Ok(data),
+            Err(CapacityError((key, _value))) => Err(CapacityError(key)),
         }
     }
 
@@ -210,8 +164,20 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     /// Panics if the set is full and the item is not a duplicate
     pub fn insert(&mut self, element: T) -> (usize, bool) {
         self.try_insert(element)
-            .ok()
             .expect("Inserting this element would have overflowed the set!")
+    }
+
+    /// Insert a new element to the set at the provided index
+    ///
+    /// If a matching element already existed in the set, it will be moved to the supplied index.
+    /// Any element that was previously there will be moved to the matching element's original index.
+    ///
+    /// Returns `Some(T)` of any element removed by this operation.
+    ///
+    /// # Panics
+    /// Panics if the provided index is larger than CAP.
+    pub fn insert_at(&mut self, element: T, index: usize) -> Option<T> {
+        self.map.insert_at(element, (), index).map(|(k, _v)| k)
     }
 
     /// Inserts multiple new elements to the set. Duplicate elements are discarded.
@@ -241,12 +207,7 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     ///
     /// Returns `Some(index)` if the element was found, or `None` if no matching element is found
     pub fn remove(&mut self, element: &T) -> Option<usize> {
-        if let Some(index) = self.find(element) {
-            self.storage[index] = None;
-            Some(index)
-        } else {
-            None
-        }
+        self.map.remove(element)
     }
 
     /// Removes an element from the set, if it exists, returning
@@ -254,30 +215,14 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     /// it was stored.
     #[must_use = "Use remove if the value is not needed."]
     pub fn take(&mut self, element: &T) -> Option<(usize, T)> {
-        if let Some(index) = self.find(element) {
-            self.take_at(index).map(|removed| (index, removed))
-        } else {
-            None
-        }
+        self.map.take(element).map(|(i, v)| (i, v.0))
     }
 
-    /// Insert a new element to the set at the provided index
+    /// Swaps the positions of element_a with the position of element_b
     ///
-    /// Returns `Some(T)` if an element was found at that index, or `None` if no element was there.
-    /// If a matching element already exists in the set, `None` will be returned.
-    ///
-    /// # Panics
-    /// Panics if the provided index is larger than CAP.
-    pub fn insert_at(&mut self, element: T, index: usize) -> Option<T> {
-        assert!(index <= CAP);
-
-        if self.contains(&element) {
-            return None;
-        }
-
-        let mut element = Some(element);
-        swap(&mut element, &mut self.storage[index]);
-        element
+    /// Returns true if both elements were found and succesfully swapped.
+    pub fn swap(&mut self, element_a: &T, element_b: &T) -> bool {
+        self.map.swap(element_a, element_b)
     }
 
     /// Constructs a new `PetitSet` by consuming values from an iterator.
@@ -300,84 +245,39 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     /// assert_eq!(failed, Err(CapacityError((PetitSet::from_raw_array_unchecked([Some(1), Some(2), Some(4)]), 3))));
     /// ```
     pub fn try_from_iter<I: IntoIterator<Item = T>>(
-        value_iter: I,
+        element_iter: I,
     ) -> Result<Self, CapacityError<(Self, T)>> {
-        use core::{mem::MaybeUninit, ptr, slice};
+        let iter_for_map = element_iter.into_iter().map(|e| (e, ()));
 
-        // This use of assume_init() is to get us an uninitialized array.
-        // This is safe because the arrays contents are all MaybeUninit. Taken
-        // from the docs for MaybeUninit.
-        //
-        // BLOCKED: use uninit_array() &co once they are stabilized.
-        let mut uninit_data: [MaybeUninit<Option<T>>; CAP] =
-            unsafe { MaybeUninit::uninit().assume_init() };
-
-        // init_data will track which elements have been initialized so far, so
-        // that we can scan for duplicates. This initialization is safe because
-        // uninit_data is properly aligned for [Option<T>], and initialization
-        // does not matter because the length is 0.
-        let mut init_data: &[Option<T>] =
-            unsafe { slice::from_raw_parts(uninit_data[0].as_ptr(), 0) };
-
-        // Each iteration of this loop will initialize the element past the end of
-        // init_data, then extend init_data to cover the newly-initialized element
-        // and advance uninit_data by one. The invariants at each iteration are:
-        //
-        // - init_data contains only initialized data.
-        // - init_data is a prefix of uninit_data.
-        //
-        // This mess is to avoid borrow checker issues checking for duplicates while
-        // mutating the array.
-        let mut value_iter = value_iter.into_iter().fuse();
-        while init_data.len() < uninit_data.len() {
-            let index = init_data.len();
-
-            let value = value_iter.next();
-            if value.is_some() && init_data.contains(&value) {
-                continue;
-            }
-
-            // We are no longer using the current value of init_data, so we can safely
-            // write to the next element.
-            uninit_data[index].write(value);
-
-            // This is safe because the element one past init_data was just initialized.
-            init_data = unsafe { slice::from_raw_parts(uninit_data[0].as_ptr(), index + 1) }
-        }
-
-        assert_eq!(init_data.len(), CAP);
-        let set = PetitSet {
-            storage: unsafe {
-                // This is safe because we just checked the length.
-                ptr::read(init_data as *const [Option<T>] as *const [Option<T>; CAP])
-            },
-        };
-
-        // Now check for any additional distinct elements in the rest of the iterator.
-        for value in value_iter {
-            if !set.contains(&value) {
-                return Err(CapacityError((set, value)));
+        match PetitMap::try_from_iter(iter_for_map) {
+            Ok(map) => Ok(PetitSet { map }),
+            Err(CapacityError((map, failed_value))) => {
+                Err(CapacityError((PetitSet { map }, failed_value.0)))
             }
         }
-        Ok(set)
     }
 
-    /// Construct a PetitSet directly from an array, without checking for duplicates.
+    /// Construct a [`PetitSet`] directly from an array, without checking for duplicates.
     ///
-    /// It is a logic error if any two non-`None` values in the array compare equal. If this occurs, the `PetitSet` returned may behave unpredictably.
+    /// It is a logic error if any two non-`None` values in the array are equal, as elements are expected to be unique.
+    /// If this occurs, the [`PetitSet`] returned may behave unpredictably.
     pub fn from_raw_array_unchecked(values: [Option<T>; CAP]) -> Self {
-        Self { storage: values }
+        // Convert from Option<T> to the required Option<(T, ())>
+        let values_for_map = values.map(|v| match v {
+            Some(v) => Some((v, ())),
+            None => None,
+        });
+
+        Self {
+            map: PetitMap::from_raw_array_unchecked(values_for_map),
+        }
     }
 }
 
 impl<T: Eq, const CAP: usize> FromIterator<T> for PetitSet<T, CAP> {
     /// Panics if the iterator contains more than `CAP` distinct elements.
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
-        let mut set: PetitSet<T, CAP> = PetitSet::default();
-        for element in iter {
-            set.insert(element);
-        }
-        set
+        PetitSet::try_from_iter(iter).unwrap()
     }
 }
 
