@@ -426,7 +426,7 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
             let mut element = fused_iter.next();
             if let Some((key, value)) = element {
                 for (init_key, init_value) in init_data.iter_mut().flatten() {
-                    if &*init_key == &key {
+                    if *init_key == key {
                         *init_value = value;
                         continue 'outer;
                     }
