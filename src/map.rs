@@ -381,14 +381,14 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
     /// # Example
     /// ```rust
     /// use petitset::CapacityError;
-    /// use petitset::PetitSet;
+    /// use petitset::PetitMap;
     ///
     /// let elems = vec![(1, 11), (2, 21), (1, 12), (4, 41), (3, 31), (1, 13)];
-    /// let set = PetitSet::<_, 5>::try_from_iter(elems.iter().copied());
-    /// assert_eq!(set, Ok(PetitSet::from_raw_array_unchecked([Some((1,13)), Some((2, 21)), Some((4, 41)), Some((3, 31)), None])));
+    /// let set = PetitMap::<_,_, 5>::try_from_iter(elems.iter().copied());
+    /// assert_eq!(set, Ok(PetitMap::from_raw_array_unchecked([Some((1,13)), Some((2, 21)), Some((4, 41)), Some((3, 31)), None])));
     ///
-    /// let failed = PetitSet::<_, 3>::try_from_iter(elems.iter().copied());
-    /// assert_eq!(failed, Err(CapacityError((PetitSet::from_raw_array_unchecked([Some((1,13)), Some((2, 21)), Some((4, 41))]), (3, 31)))));
+    /// let failed = PetitMap::<_,_, 3>::try_from_iter(elems.iter().copied());
+    /// assert_eq!(failed, Err(CapacityError((PetitMap::from_raw_array_unchecked([Some((1,12)), Some((2, 21)), Some((4, 41))]), (3, 31)))));
     /// ```
     pub fn try_from_iter<I: IntoIterator<Item = (K, V)>>(
         element_iter: I,
@@ -407,8 +407,8 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
         // that we can scan for duplicates. This initialization is safe because
         // uninit_data is properly aligned for [Option<T>], and initialization
         // does not matter because the length is 0.
-        let mut init_data: &[Option<(K, V)>] =
-            unsafe { slice::from_raw_parts(uninit_data[0].as_ptr(), 0) };
+        let mut init_data: &mut [Option<(K, V)>] =
+            unsafe { slice::from_raw_parts_mut(uninit_data[0].as_mut_ptr(), 0) };
 
         // Each iteration of this loop will initialize the element past the end of
         // init_data, then extend init_data to cover the newly-initialized element
@@ -420,16 +420,19 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
         // This mess is to avoid borrow checker issues checking for duplicates while
         // mutating the array.
         let mut fused_iter = element_iter.into_iter().fuse();
-        while init_data.len() < uninit_data.len() {
+        'outer: while init_data.len() < uninit_data.len() {
             let index = init_data.len();
 
-            let element = fused_iter.next();
-            if let Some((key, _value)) = &element {
-                for (init_key, _init_value) in init_data.iter().flatten() {
-                    if *key == *init_key {
-                        continue;
+            let mut element = fused_iter.next();
+            if let Some((key, value)) = element {
+                for (init_key, init_value) in init_data.iter_mut().flatten() {
+                    if &*init_key == &key {
+                        *init_value = value;
+                        continue 'outer;
                     }
                 }
+                // We didn't find a duplicate value, so we need to move key and value back into the element variable.
+                element = Some((key, value));
             }
 
             // We are no longer using the current value of init_data, so we can safely
@@ -437,7 +440,7 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
             uninit_data[index].write(element);
 
             // This is safe because the element one past init_data was just initialized.
-            init_data = unsafe { slice::from_raw_parts(uninit_data[0].as_ptr(), index + 1) }
+            init_data = unsafe { slice::from_raw_parts_mut(uninit_data[0].as_mut_ptr(), index + 1) }
         }
 
         assert_eq!(init_data.len(), CAP);
