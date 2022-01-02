@@ -466,6 +466,18 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
     }
 }
 
+impl<K: Eq, V: PartialEq, const CAP: usize> PetitMap<K, V, CAP> {
+    /// Are the two [`PetitMap`]s element-for-element identical, in the same order?
+    pub fn identical(&self, other: Self) -> bool {
+        for i in 0..CAP {
+            if self.storage[i] != other.storage[i] {
+                return false;
+            }
+        }
+        true
+    }
+}
+
 impl<K: Eq, V, const CAP: usize> FromIterator<(K, V)> for PetitMap<K, V, CAP> {
     /// Panics if the iterator contains more than `CAP` distinct elements.
     fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {

@@ -232,6 +232,11 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
         self.map.swap(element_a, element_b)
     }
 
+    /// Are the two [`PetitSet`]s element-for-element identical, in the same order?
+    pub fn identical(&self, other: Self) -> bool {
+        self.map.identical(other.map)
+    }
+
     /// Constructs a new [`PetitSet`] by consuming values from an iterator.
     ///
     /// The consumed values will be stored in order, with duplicate elements discarded.
