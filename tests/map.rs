@@ -42,7 +42,7 @@ fn removal() {
     assert_eq!(map.find(&1), None);
 
     let failed_remove = map.remove_at(0);
-    assert_eq!(failed_remove, false);
+    assert!(!failed_remove);
 }
 
 #[test]
