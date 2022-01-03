@@ -524,8 +524,16 @@ impl<K: Eq, V, const CAP: usize> Iterator for PetitMapIter<K, V, CAP> {
     }
 }
 
-impl<K: Eq, V: PartialEq, const CAP: usize> PartialEq for PetitMap<K, V, CAP> {
-    fn eq(&self, other: &Self) -> bool {
+impl<K: Eq, V: PartialEq, const CAP: usize, const OTHER_CAP: usize>
+    PartialEq<PetitMap<K, V, OTHER_CAP>> for PetitMap<K, V, CAP>
+{
+    /// Tests set-equality between the two maps
+    ///
+    /// This is order and cap size-independent.
+    /// Use the `equivalent` method for elementwise-equality.
+    ///
+    /// Uses an inefficient O(n^2) algorithm due to minimal trait bounds.
+    fn eq(&self, other: &PetitMap<K, V, OTHER_CAP>) -> bool {
         for key in self.keys() {
             if self.get(key) != other.get(key) {
                 return false;

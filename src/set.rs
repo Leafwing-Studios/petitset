@@ -327,9 +327,16 @@ impl<T: Eq, const CAP: usize> Iterator for PetitSetIter<T, CAP> {
     }
 }
 
-impl<T: Eq, const CAP: usize> PartialEq for PetitSet<T, CAP> {
-    /// Uses an inefficient O(n^2) approach to avoid introducing additional trait bounds
-    fn eq(&self, other: &Self) -> bool {
+impl<T: Eq, const CAP: usize, const OTHER_CAP: usize> PartialEq<PetitSet<T, OTHER_CAP>>
+    for PetitSet<T, CAP>
+{
+    /// Tests set-equality between the two sets
+    ///
+    /// This is order and cap size-independent.
+    /// Use the `equivalent` method for elementwise-equality.
+    ///
+    /// Uses an inefficient O(n^2) algorithm due to minimal trait bounds.
+    fn eq(&self, other: &PetitSet<T, OTHER_CAP>) -> bool {
         // Two sets cannot be equal if their cardinality differs
         if self.len() != other.len() {
             return false;
