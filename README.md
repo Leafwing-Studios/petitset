@@ -1,7 +1,7 @@
 # About
 
-Array-backed ordered set and map data structures in Rust, optimized for stack-allocated storage of a tiny number of `Copy` elements with a fixed cap.
-`no_std` compatible!
+Array-backed ordered set and map data structures in Rust, optimized for stack-allocated storage of a tiny number of elements with a fixed cap.
+Your elements only need `Eq`, and this crate is`no_std` compatible!
 
 This crate is designed to be used in performance-sensitive contexts with a small number of elements, where iteration is more common than look-ups and you don't mind a fixed size.
 One particularly useful quirk is that elements are not recompacted upon removal: this can be very useful when replacing elements in a set or using the indexes that the elements are stored at in a semantic fashion.
@@ -14,6 +14,7 @@ If this isn't what you're after, check out one of these alternatives!
 - [sparseset](https://github.com/bombela/sparseset): Heap-allocated, great for sparse data and frequent iteration. Stable order!
 - [HashSet](https://doc.rust-lang.org/std/collections/struct.HashSet.html): Heap-allocated, unordered, requires `Hash`, unbounded size.
 - [BTreeSet](https://doc.rust-lang.org/stable/std/collections/struct.BTreeSet.html): Heap-allocated, ordered, requires `Ord`, unbounded size.
+- [IndexMap](https://docs.rs/indexmap/latest/indexmap/): Heap-allocated, requires `Hash`, unbounded size.
 
 ## Contributing
 
