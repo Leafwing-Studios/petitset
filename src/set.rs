@@ -132,6 +132,18 @@ impl<T, const CAP: usize> PetitSet<T, CAP> {
     }
 }
 
+impl<T: Eq, const CAP: usize> Extend<T> for PetitSet<T, CAP> {
+    /// Inserts multiple new elements to the set. Duplicate elements are discarded.
+    ///
+    /// # Panics
+    /// Panics if the set would overflow due to the insertion of non-duplicate items
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        for element in iter {
+            self.insert(element);
+        }
+    }
+}
+
 impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     /// Returns the index for the provided element, if it exists in the set
     pub fn find(&self, element: &T) -> Option<usize> {
@@ -185,16 +197,6 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     /// Panics if the provided index is larger than CAP.
     pub fn insert_at(&mut self, element: T, index: usize) -> Option<T> {
         self.map.insert_at(element, (), index).map(|(k, _v)| k)
-    }
-
-    /// Inserts multiple new elements to the set. Duplicate elements are discarded.
-    ///
-    /// # Panics
-    /// Panics if the set would overflow due to the insertion of non-duplicate items
-    pub fn extend(&mut self, elements: impl IntoIterator<Item = T>) {
-        for element in elements {
-            self.insert(element);
-        }
     }
 
     /// Inserts multiple new elements to the set. Duplicate elements are discarded.

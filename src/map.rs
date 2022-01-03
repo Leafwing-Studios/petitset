@@ -255,16 +255,6 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
             .expect("Inserting this key-value pair would have overflowed the map!")
     }
 
-    /// Stores mulitple key-value pairs in the map
-    ///
-    /// # Panics
-    /// Panics if the map was full when a non-duplicate key was inserted.
-    pub fn insert_multiple(&mut self, pairs: impl IntoIterator<Item = (K, V)>) {
-        for (key, value) in pairs {
-            self.insert(key, value);
-        }
-    }
-
     /// Insert a new element to the set at the provided index
     ///
     /// If a matching element already existed in the set, it will be moved to the supplied index.
@@ -466,6 +456,20 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
     /// If this occurs, the [`PetitMap`] returned may behave unpredictably.
     pub fn from_raw_array_unchecked(values: [Option<(K, V)>; CAP]) -> Self {
         Self { storage: values }
+    }
+}
+
+impl<K: Eq, V, const CAP: usize> Extend<(K, V)> for PetitMap<K, V, CAP> {
+    /// Inserts multiple new key-value pairs to the map.
+    ///
+    /// Duplicate keys will overwrite existing values.
+    ///
+    /// # Panics
+    /// Panics if the map would overflow due to the insertion of non-duplicate keys
+    fn extend<I: IntoIterator<Item = (K, V)>>(&mut self, iter: I) {
+        for (key, value) in iter {
+            self.insert(key, value);
+        }
     }
 }
 
