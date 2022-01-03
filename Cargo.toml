@@ -17,6 +17,13 @@ opt-level = 3
 [workspace]
 members = ["./", "tools/ci"]
 
+[dependencies]
+thiserror = { version = "1.0", optional = true }
+
 [dev-dependencies]
 criterion = "0.3"
 
+[features]
+# Implements the thiserror::Error and std::Error traits
+# Incompatible with no_std
+thiserror_trait = ["thiserror"]
