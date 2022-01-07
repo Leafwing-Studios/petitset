@@ -543,6 +543,8 @@ impl<K: Eq, V: PartialEq, const CAP: usize, const OTHER_CAP: usize>
     }
 }
 
+impl<K: Eq, V: Eq, const CAP: usize> Eq for PetitMap<K, V, CAP> {}
+
 /// The `Ok` result of a successful [`PetitMap`] insertion operation
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum SuccesfulMapInsertion<V> {

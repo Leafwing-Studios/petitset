@@ -361,6 +361,8 @@ impl<T: Eq, const CAP: usize, const OTHER_CAP: usize> PartialEq<PetitSet<T, OTHE
     }
 }
 
+impl<T: Eq, const CAP: usize> Eq for PetitSet<T, CAP> {}
+
 /// The `Ok` result of a successful [`PetitSet`] insertion operation
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum SuccesfulSetInsertion {
