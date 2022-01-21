@@ -9,7 +9,7 @@ license = "MIT + APACHE"
 edition = "2021"
 categories = ["data-structures"]
 keywords = ["set"]
-exclude = ["tools/**/*", "github/**/*"]
+exclude = ["tools/**/*", ".github/**/*"]
 
 [profile.dev]
 opt-level = 3
