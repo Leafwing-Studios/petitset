@@ -255,12 +255,12 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
             .expect("Inserting this key-value pair would have overflowed the map!")
     }
 
-    /// Insert a new element to the set at the provided index
+    /// Insert a new key-value pair at the provided index
     ///
-    /// If a matching element already existed in the set, it will be moved to the supplied index.
-    /// Any element that was previously there will be moved to the matching element's original index.
+    /// If a matching key already existed in the set, it will be moved to the supplied index.
+    /// Any key-value pair that was previously there will be moved to the matching key's original index.
     ///
-    /// Returns `Some(T)` of any element removed by this operation.
+    /// Returns `Some((K, V))` of any element removed by this operation.
     ///
     /// # Panics
     /// Panics if the provided index is larger than CAP.
