@@ -182,7 +182,7 @@ impl<K, V, const CAP: usize> PetitMap<K, V, CAP> {
     }
 
     /// Returns the maximum number of elements that can be stored in the [`PetitMap`]
-    pub fn capacity(&self) -> usize {
+    pub const fn capacity(&self) -> usize {
         CAP
     }
 

@@ -58,7 +58,7 @@ impl<T, const CAP: usize> PetitSet<T, CAP> {
     }
 
     /// Return the capacity of the [`PetitSet`]
-    pub fn capacity(&self) -> usize {
+    pub const fn capacity(&self) -> usize {
         CAP
     }
 
