@@ -1,5 +1,8 @@
 //! Algebraic manipulations of `PetitSets`
-use crate::set::{PetitSet, PetitSetIter};
+use crate::set::PetitSet;
+
+#[cfg(feature = "set_algebra")]
+use crate::set::PetitSetIter;
 
 impl<T: Eq + Clone, const CAP: usize> PetitSet<T, CAP> {
     #[cfg(feature = "set_algebra")]
