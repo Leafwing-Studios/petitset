@@ -220,7 +220,7 @@ impl<T: Eq + Clone, const CAP: usize> PetitSet<T, CAP> {
     }
 }
 
-/// Trivial const replacement for [`std::comp::Ord::max`]
+/// Trivial const replacement for `std::comp::Ord::max`
 pub const fn max_of(a: usize, b: usize) -> usize {
     if a >= b {
         a
