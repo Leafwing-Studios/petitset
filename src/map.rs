@@ -38,21 +38,8 @@ impl<K, V, const CAP: usize> PetitMap<K, V, CAP> {
     ///
     /// The capacity is given by the generic parameter `CAP`.
     pub fn new() -> Self {
-        use core::mem::MaybeUninit;
-        // This use of assume_init() is to get us an uninitialized array.
-        // This is safe because the arrays contents are all MaybeUninit. Taken
-        // from the docs for MaybeUninit.
-        //
-        // BLOCKED: use uninit_array() &co once they are stabilized.
-        let mut data: [MaybeUninit<Option<(K, V)>>; CAP] =
-            unsafe { MaybeUninit::uninit().assume_init() };
-
-        for element in data.iter_mut() {
-            element.write(None);
-        }
-
         PetitMap {
-            storage: unsafe { data.map(|u| u.assume_init()) },
+            storage: [(); CAP].map(|_| None),
         }
     }
 
