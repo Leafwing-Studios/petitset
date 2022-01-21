@@ -6,9 +6,9 @@
 //! Iteration order is guaranteed to be stable, on a first-in-first-out basis.
 
 #![cfg_attr(not(feature = "thiserror_trait"), no_std)]
-#![allow(incomplete_features)]
-#![feature(generic_const_exprs)]
 #![deny(missing_docs)]
+#![cfg_attr(feature = "set_algebra", allow(incomplete_features))]
+#![cfg_attr(feature = "set_algebra", feature(generic_const_exprs))]
 
 use core::fmt::{Debug, Formatter, Result};
 

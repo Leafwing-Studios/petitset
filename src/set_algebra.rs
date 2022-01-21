@@ -2,6 +2,7 @@
 use crate::set::{PetitSet, PetitSetIter};
 
 impl<T: Eq + Clone, const CAP: usize> PetitSet<T, CAP> {
+    #[cfg(feature = "set_algebra")]
     /// Returns an iterator of references to the values that are in `self` but not in `other`.
     ///
     /// # Examples
@@ -34,6 +35,7 @@ impl<T: Eq + Clone, const CAP: usize> PetitSet<T, CAP> {
         iter
     }
 
+    #[cfg(feature = "set_algebra")]
     /// Returns an iterator of references to the values that are not in both `self` and `other`.
     ///
     /// # Examples
@@ -70,7 +72,7 @@ impl<T: Eq + Clone, const CAP: usize> PetitSet<T, CAP> {
 
         iter
     }
-
+    #[cfg(feature = "set_algebra")]
     /// Returns an iterator of references to the values that are in both `self` and `other`.
     ///
     /// # Examples
@@ -101,6 +103,7 @@ impl<T: Eq + Clone, const CAP: usize> PetitSet<T, CAP> {
         iter
     }
 
+    #[cfg(feature = "set_algebra")]
     /// Returns an iterator of references to the values that are in either `self` and `other`.
     ///
     /// # Examples

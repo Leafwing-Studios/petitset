@@ -10,7 +10,6 @@ edition = "2021"
 categories = ["data-structures"]
 keywords = ["set"]
 exclude = ["tools/**/*", "github/**/*"]
-rust = "1.57"
 
 [profile.dev]
 opt-level = 3
@@ -25,3 +24,6 @@ thiserror = { version = "1.0", optional = true }
 # Implements the thiserror::Error and std::Error traits
 # Incompatible with no_std
 thiserror_trait = ["thiserror"]
+# Implements set algebra operations (union, intersection, difference and symmetric difference)
+# Works perfectly, but relies on the incomplete nightly feature `generic_const_exprs`
+set_algebra = []
