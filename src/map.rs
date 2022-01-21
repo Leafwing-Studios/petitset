@@ -208,7 +208,7 @@ impl<K, V, const CAP: usize> PetitMap<K, V, CAP> {
         self.storage.swap(index_a, index_b);
     }
 
-    /// Removes all elements from the map without allocation
+    /// Removes all elements from the map without de-allocation
     pub fn clear(&mut self) {
         for index in 0..CAP {
             self.storage[index] = None;
@@ -293,7 +293,7 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
     }
 
     /// Does the map contain the provided key?
-    pub fn contains(&self, key: &K) -> bool {
+    pub fn contains_key(&self, key: &K) -> bool {
         self.find(key).is_some()
     }
 
@@ -304,6 +304,18 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
         if let Some(index) = self.find(key) {
             if let Some((_key, value)) = &self.storage[index] {
                 return Some(value);
+            }
+        }
+        None
+    }
+
+    /// Returns the key-value pair corresponding to the supplied key.
+    ///
+    /// Returns `Some(&K, &V)` if the key is found
+    pub fn get_key_value(&self, key: &K) -> Option<(&K, &V)> {
+        if let Some(index) = self.find(key) {
+            if let Some((key, value)) = &self.storage[index] {
+                return Some((key, value));
             }
         }
         None
@@ -443,7 +455,7 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
 
         // Now check for any additional distinct elements in the rest of the iterator.
         for element in fused_iter {
-            if !map.contains(&element.0) {
+            if !map.contains_key(&element.0) {
                 return Err(CapacityError((map, element)));
             }
         }
