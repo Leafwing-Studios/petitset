@@ -6,7 +6,7 @@
 //! Iteration order is guaranteed to be stable, on a first-in-first-out basis.
 
 #![cfg_attr(not(feature = "thiserror_trait"), no_std)]
-#![deny(missing_docs)]
+#![forbid(missing_docs)]
 #![cfg_attr(feature = "set_algebra", allow(incomplete_features))]
 #![cfg_attr(feature = "set_algebra", feature(generic_const_exprs))]
 
