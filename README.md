@@ -16,6 +16,9 @@ If this isn't what you're after, check out one of these alternatives!
 - [BTreeSet](https://doc.rust-lang.org/stable/std/collections/struct.BTreeSet.html): Heap-allocated, ordered, requires `Ord`, unbounded size.
 - [IndexMap](https://docs.rs/indexmap/latest/indexmap/): Heap-allocated, requires `Hash`, unbounded size.
 
+This crate has a reasonable collection of convenience methods for working with both sets and maps, aiming for rough equivalence with `HashMap` and `HashSet`.
+If you'd like more, please submit an issue or PR!
+
 ## Contributing
 
 This repository is open to community contributions!

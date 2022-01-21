@@ -214,6 +214,21 @@ impl<K, V, const CAP: usize> PetitMap<K, V, CAP> {
             self.storage[index] = None;
         }
     }
+
+    /// Inserts a key-value pair into the next empty index of the map,
+    /// without checking for uniqueness
+    ///
+    /// Returns Some(index) if the operation succeeded, or None if it failed.
+    ///
+    /// # Warning
+    /// This API is very easy to misuse and will completely break your PetitMap if you do.
+    /// Avoid it unless you are guaranteed by construction that no duplicates exist.
+    pub fn insert_unchecked(&mut self, key: K, value: V) -> Option<usize> {
+        let index = self.next_empty_index(0)?;
+        self.storage[index] = Some((key, value));
+
+        Some(index)
+    }
 }
 
 impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
@@ -536,6 +551,16 @@ impl<K: Eq, V, const CAP: usize> IntoIterator for PetitMap<K, V, CAP> {
 pub struct PetitMapIter<K: Eq, V, const CAP: usize> {
     map: PetitMap<K, V, CAP>,
     cursor: usize,
+}
+
+impl<K: Eq, V, const CAP: usize> PetitMapIter<K, V, CAP> {
+    /// Converts this iterator into the underlying [`PetitMap`]
+    ///
+    /// Simpler and more direct than using `.collect()`
+    #[must_use]
+    pub fn to_map(self) -> PetitMap<K, V, CAP> {
+        self.map
+    }
 }
 
 impl<K: Eq, V, const CAP: usize> Iterator for PetitMapIter<K, V, CAP> {

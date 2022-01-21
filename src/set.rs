@@ -130,6 +130,18 @@ impl<T, const CAP: usize> PetitSet<T, CAP> {
     pub fn swap_at(&mut self, index_a: usize, index_b: usize) {
         self.map.swap_at(index_a, index_b);
     }
+
+    /// Inserts an element into the next empty index of the set,
+    /// without checking for uniqueness
+    ///
+    /// Returns Some(index) if the operation succeeded, or None if it failed.
+    ///
+    /// # Warning
+    /// This API is very easy to misuse and will completely break your PetitSet if you do.
+    /// Avoid it unless you are guaranteed by construction that no duplicates exist.
+    pub fn insert_unchecked(&mut self, element: T) -> Option<usize> {
+        self.map.insert_unchecked(element, ())
+    }
 }
 
 impl<T: Eq, const CAP: usize> Extend<T> for PetitSet<T, CAP> {
@@ -317,8 +329,18 @@ impl<T: Eq, const CAP: usize> IntoIterator for PetitSet<T, CAP> {
 /// An [`Iterator`] struct for [`PetitSet`]
 #[derive(Clone, Debug)]
 pub struct PetitSetIter<T: Eq, const CAP: usize> {
-    set: PetitSet<T, CAP>,
+    pub(crate) set: PetitSet<T, CAP>,
     cursor: usize,
+}
+
+impl<T: Eq, const CAP: usize> PetitSetIter<T, CAP> {
+    /// Converts this iterator into the underlying [`PetitSet`]
+    ///
+    /// Simpler and more direct than using `.collect()`
+    #[must_use]
+    pub fn to_set(self) -> PetitSet<T, CAP> {
+        self.set
+    }
 }
 
 impl<T: Eq, const CAP: usize> Iterator for PetitSetIter<T, CAP> {
@@ -372,6 +394,15 @@ impl<T: Eq, const CAP: usize, const OTHER_CAP: usize> PartialEq<PetitSet<T, OTHE
 }
 
 impl<T: Eq, const CAP: usize> Eq for PetitSet<T, CAP> {}
+
+impl<T: Eq, const CAP: usize> Default for PetitSetIter<T, CAP> {
+    fn default() -> Self {
+        Self {
+            set: PetitSet::default(),
+            cursor: 0,
+        }
+    }
+}
 
 /// The `Ok` result of a successful [`PetitSet`] insertion operation
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]

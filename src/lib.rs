@@ -6,6 +6,8 @@
 //! Iteration order is guaranteed to be stable, on a first-in-first-out basis.
 
 #![cfg_attr(not(feature = "thiserror_trait"), no_std)]
+#![allow(incomplete_features)]
+#![feature(generic_const_exprs)]
 #![deny(missing_docs)]
 
 use core::fmt::{Debug, Formatter, Result};
@@ -15,6 +17,8 @@ pub use map::{PetitMap, SuccesfulMapInsertion};
 
 mod set;
 pub use set::{PetitSet, SuccesfulSetInsertion};
+
+pub mod set_algebra;
 
 #[cfg(feature = "thiserror_trait")]
 use thiserror::Error;

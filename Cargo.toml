@@ -10,6 +10,7 @@ edition = "2021"
 categories = ["data-structures"]
 keywords = ["set"]
 exclude = ["tools/**/*", "github/**/*"]
+rust = "1.57"
 
 [profile.dev]
 opt-level = 3
