@@ -27,7 +27,7 @@ pub struct PetitMap<K, V, const CAP: usize> {
     storage: [Option<(K, V)>; CAP],
 }
 
-impl<K, V: Copy, const CAP: usize> Default for PetitMap<K, V, CAP> {
+impl<K, V, const CAP: usize> Default for PetitMap<K, V, CAP> {
     fn default() -> Self {
         Self::new()
     }
