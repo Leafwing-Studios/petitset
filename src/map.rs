@@ -413,71 +413,16 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
     pub fn try_from_iter<I: IntoIterator<Item = (K, V)>>(
         element_iter: I,
     ) -> Result<Self, CapacityError<(Self, (K, V))>> {
-        use core::{mem::MaybeUninit, ptr, slice};
+        let mut pm = Self::new();
 
-        // This use of assume_init() is to get us an uninitialized array.
-        // This is safe because the arrays contents are all MaybeUninit. Taken
-        // from the docs for MaybeUninit.
-        //
-        // BLOCKED: use uninit_array() &co once they are stabilized.
-        let mut uninit_data: [MaybeUninit<Option<(K, V)>>; CAP] =
-            unsafe { MaybeUninit::uninit().assume_init() };
-
-        // init_data will track which elements have been initialized so far, so
-        // that we can scan for duplicates. This initialization is safe because
-        // uninit_data is properly aligned for [Option<T>], and initialization
-        // does not matter because the length is 0.
-        let mut init_data: &mut [Option<(K, V)>] =
-            unsafe { slice::from_raw_parts_mut(uninit_data[0].as_mut_ptr(), 0) };
-
-        // Each iteration of this loop will initialize the element past the end of
-        // init_data, then extend init_data to cover the newly-initialized element
-        // and advance uninit_data by one. The invariants at each iteration are:
-        //
-        // - init_data contains only initialized data.
-        // - init_data is a prefix of uninit_data.
-        //
-        // This mess is to avoid borrow checker issues checking for duplicates while
-        // mutating the array.
-        let mut fused_iter = element_iter.into_iter().fuse();
-        'outer: while init_data.len() < uninit_data.len() {
-            let index = init_data.len();
-
-            let mut element = fused_iter.next();
-            if let Some((key, value)) = element {
-                for (init_key, init_value) in init_data.iter_mut().flatten() {
-                    if *init_key == key {
-                        *init_value = value;
-                        continue 'outer;
-                    }
-                }
-                // We didn't find a duplicate value, so we need to move key and value back into the element variable.
-                element = Some((key, value));
-            }
-
-            // We are no longer using the current value of init_data, so we can safely
-            // write to the next element.
-            uninit_data[index].write(element);
-
-            // This is safe because the element one past init_data was just initialized.
-            init_data = unsafe { slice::from_raw_parts_mut(uninit_data[0].as_mut_ptr(), index + 1) }
-        }
-
-        assert_eq!(init_data.len(), CAP);
-        let map = PetitMap {
-            storage: unsafe {
-                // This is safe because we just checked the length.
-                ptr::read(init_data as *const [Option<(K, V)>] as *const [Option<(K, V)>; CAP])
-            },
-        };
-
-        // Now check for any additional distinct elements in the rest of the iterator.
-        for element in fused_iter {
-            if !map.contains_key(&element.0) {
-                return Err(CapacityError((map, element)));
+        for i in element_iter {
+            match pm.try_insert(i.0, i.1) {
+                Ok(_) => {},
+                Err(failed) => return Err(CapacityError((pm, failed.0))),
             }
         }
-        Ok(map)
+
+        Ok(pm)
     }
 
     /// Construct a [`PetitMap`] directly from an array, without checking for duplicates.
