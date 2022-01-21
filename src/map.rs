@@ -413,16 +413,15 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
     pub fn try_from_iter<I: IntoIterator<Item = (K, V)>>(
         element_iter: I,
     ) -> Result<Self, CapacityError<(Self, (K, V))>> {
-        let mut pm = Self::new();
+        let mut map = Self::new();
 
-        for i in element_iter {
-            match pm.try_insert(i.0, i.1) {
-                Ok(_) => {},
-                Err(failed) => return Err(CapacityError((pm, failed.0))),
+        for (k, v) in element_iter {
+            if let Err(CapacityError(overfull_element)) = map.try_insert(k, v) {
+                return Err(CapacityError((map, overfull_element)));
             }
         }
 
-        Ok(pm)
+        Ok(map)
     }
 
     /// Construct a [`PetitMap`] directly from an array, without checking for duplicates.
