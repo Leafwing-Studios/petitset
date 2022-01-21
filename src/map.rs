@@ -221,7 +221,7 @@ impl<K, V, const CAP: usize> PetitMap<K, V, CAP> {
     /// Returns Some(index) if the operation succeeded, or None if it failed.
     ///
     /// # Warning
-    /// This API is very easy to misuse and will completely break your PetitMap if you do.
+    /// This API is very easy to misuse and will completely break your `PetitMap` if you do.
     /// Avoid it unless you are guaranteed by construction that no duplicates exist.
     pub fn insert_unchecked(&mut self, key: K, value: V) -> Option<usize> {
         let index = self.next_empty_index(0)?;
