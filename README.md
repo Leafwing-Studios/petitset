@@ -1,7 +1,14 @@
 # About
 
 Array-backed ordered set and map data structures in Rust, optimized for stack-allocated storage of a tiny number of elements with a fixed cap.
-Your elements only need `Eq`, and this crate is both entirely safe and `no_std` compatible!
+All you need is `Eq`!
+
+This crate is:
+
+- entirely safe
+- fully documented
+- `no_std` compatible
+- zero dependencies (unless you want `thiserror` integration)
 
 This crate is designed to be used in performance-sensitive contexts with a small number of elements, where iteration is more common than look-ups and you don't mind a fixed size.
 One particularly useful quirk is that elements are not recompacted upon removal: this can be very useful when replacing elements in a set or using the indexes that the elements are stored at in a semantic fashion.
