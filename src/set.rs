@@ -239,6 +239,16 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
         self.map.identical(other.map)
     }
 
+    /// Retains only the elements specified by the predicate.
+    ///
+    /// In other words, remove all elements e such that f(&e) returns false. The elements are visited in order.
+    pub fn retain<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&T) -> bool,
+    {
+        self.map.retain(|e, ()| f(e));
+    }
+
     /// Constructs a new [`PetitSet`] by consuming values from an iterator.
     ///
     /// The consumed values will be stored in order, with duplicate elements discarded.

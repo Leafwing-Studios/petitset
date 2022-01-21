@@ -372,6 +372,22 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
         }
     }
 
+    /// Retains only the elements specified by the predicate.
+    ///
+    /// In other words, remove all pairs (k, v) such that f(&k, &mut v) returns false. The elements are visited in order.
+    pub fn retain<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&K, &mut V) -> bool,
+    {
+        for i in 0..self.capacity() {
+            if let Some((k, v)) = self.get_at_mut(i) {
+                if f(k, v) {
+                    self.remove_at(i);
+                }
+            }
+        }
+    }
+
     /// Constructs a new [`PetitMap`] by consuming values from an iterator.
     ///
     /// The consumed values will be stored in order, with duplicate elements discarded.
