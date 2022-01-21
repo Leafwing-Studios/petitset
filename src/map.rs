@@ -558,7 +558,7 @@ impl<K: Eq, V, const CAP: usize> PetitMapIter<K, V, CAP> {
     ///
     /// Simpler and more direct than using `.collect()`
     #[must_use]
-    pub fn to_map(self) -> PetitMap<K, V, CAP> {
+    pub fn into_map(self) -> PetitMap<K, V, CAP> {
         self.map
     }
 }

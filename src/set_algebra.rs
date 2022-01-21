@@ -14,8 +14,8 @@ impl<T: Eq + Clone, const CAP: usize> PetitSet<T, CAP> {
     /// let set_a_minus_b: PetitSet<usize, 3> = PetitSet::from_iter([13]);
     /// let set_b_minus_a: PetitSet<usize, 5> = PetitSet::from_iter([15, 3, 4]);
     ///
-    /// let computed_set_a_minus_b = set_a.difference(&set_b).to_set();
-    /// let computed_set_b_minus_a = set_b.difference(&set_a).to_set();
+    /// let computed_set_a_minus_b = set_a.difference(&set_b).into_set();
+    /// let computed_set_b_minus_a = set_b.difference(&set_a).into_set();
     ///
     /// assert_eq!(set_a_minus_b, computed_set_a_minus_b);
     /// assert_eq!(set_b_minus_a, computed_set_b_minus_a);
@@ -45,8 +45,8 @@ impl<T: Eq + Clone, const CAP: usize> PetitSet<T, CAP> {
     ///  
     /// let set_a_sym_diff_b: PetitSet<usize, 8> = PetitSet::from_iter([13, 15, 3, 4]);
     ///
-    /// let computed_set_a_sym_diff_b = set_a.symmetric_difference(&set_b).to_set();
-    /// let computed_set_b_sym_diff_a = set_b.symmetric_difference(&set_a).to_set();
+    /// let computed_set_a_sym_diff_b = set_a.symmetric_difference(&set_b).into_set();
+    /// let computed_set_b_sym_diff_a = set_b.symmetric_difference(&set_a).into_set();
     ///
     /// assert_eq!(set_a_sym_diff_b, computed_set_a_sym_diff_b);
     /// assert_eq!(computed_set_a_sym_diff_b, computed_set_b_sym_diff_a);
@@ -82,8 +82,8 @@ impl<T: Eq + Clone, const CAP: usize> PetitSet<T, CAP> {
     ///  
     /// let set_a_intersection_b: PetitSet<usize, 5> = PetitSet::from_iter([7, 5]);
     ///
-    /// let computed_set_a_intersection_b = set_a.intersection(&set_b).to_set();
-    /// let computed_set_b_intersection_a = set_b.intersection(&set_a).to_set();
+    /// let computed_set_a_intersection_b = set_a.intersection(&set_b).into_set();
+    /// let computed_set_b_intersection_a = set_b.intersection(&set_a).into_set();
     ///
     /// assert_eq!(set_a_intersection_b, computed_set_a_intersection_b);
     /// assert_eq!(computed_set_a_intersection_b, computed_set_b_intersection_a);
@@ -112,8 +112,8 @@ impl<T: Eq + Clone, const CAP: usize> PetitSet<T, CAP> {
     ///  
     /// let set_a_union_b: PetitSet<usize, 8> = PetitSet::from_iter([7, 13, 5, 15, 3, 4]);
     ///
-    /// let computed_set_a_union_b = set_a.union(&set_b).to_set();
-    /// let computed_set_b_union_a = set_b.union(&set_a).to_set();
+    /// let computed_set_a_union_b = set_a.union(&set_b).into_set();
+    /// let computed_set_b_union_a = set_b.union(&set_a).into_set();
     ///
     /// assert_eq!(set_a_union_b, computed_set_a_union_b);
     /// assert_eq!(computed_set_a_union_b, computed_set_b_union_a);

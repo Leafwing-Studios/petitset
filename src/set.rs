@@ -338,7 +338,7 @@ impl<T: Eq, const CAP: usize> PetitSetIter<T, CAP> {
     ///
     /// Simpler and more direct than using `.collect()`
     #[must_use]
-    pub fn to_set(self) -> PetitSet<T, CAP> {
+    pub fn into_set(self) -> PetitSet<T, CAP> {
         self.set
     }
 }
