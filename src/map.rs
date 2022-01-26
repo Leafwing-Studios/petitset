@@ -22,7 +22,7 @@ use core::mem::swap;
 ///
 /// The maximum size of this type is given by the const-generic type parameter `CAP`.
 /// Keys are guaranteed to be unique.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash)]
 pub struct PetitMap<K, V, const CAP: usize> {
     storage: [Option<(K, V)>; CAP],
 }

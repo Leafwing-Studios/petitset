@@ -22,7 +22,7 @@ use crate::{map::SuccesfulMapInsertion, CapacityError};
 ///
 /// The maximum size of this type is given by the const-generic type parameter `CAP`.
 /// Entries in this structure are guaranteed to be unique.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct PetitSet<T, const CAP: usize> {
     map: PetitMap<T, (), CAP>,
 }

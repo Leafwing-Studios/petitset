@@ -119,3 +119,22 @@ fn remove_and_insert_in_same_place() {
     set.insert_at(5, 5);
     assert!(is_sorted(&set));
 }
+
+#[test]
+fn hashable() {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::Hash;
+
+    let mut set_1: PetitSet<u8, 8> = PetitSet::default();
+    set_1.insert(42);
+
+    let mut set_2: PetitSet<u8, 8> = PetitSet::default();
+    set_2.insert_at(42, 3);
+
+    let mut hasher = DefaultHasher::new();
+
+    let set_1_hash = set_1.hash(&mut hasher);
+    let set_2_hash = set_2.hash(&mut hasher);
+
+    assert_eq!(set_1_hash, set_2_hash);
+}
