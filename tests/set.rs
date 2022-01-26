@@ -123,18 +123,30 @@ fn remove_and_insert_in_same_place() {
 #[test]
 fn hashable() {
     use std::collections::hash_map::DefaultHasher;
-    use std::hash::Hash;
+    use std::hash::{Hash, Hasher};
 
     let mut set_1: PetitSet<u8, 8> = PetitSet::default();
     set_1.insert(42);
 
     let mut set_2: PetitSet<u8, 8> = PetitSet::default();
-    set_2.insert_at(42, 3);
+    set_2.insert(42);
 
-    let mut hasher = DefaultHasher::new();
+    let mut set_3: PetitSet<u8, 8> = PetitSet::default();
+    set_3.insert_at(42, 3);
 
-    let set_1_hash = set_1.hash(&mut hasher);
-    let set_2_hash = set_2.hash(&mut hasher);
+    let mut set_4: PetitSet<u8, 8> = PetitSet::default();
+    set_4.insert(43);
 
-    assert_eq!(set_1_hash, set_2_hash);
+    fn calculate_hash<T: Hash>(t: &T) -> u64 {
+        let mut s = DefaultHasher::new();
+        t.hash(&mut s);
+        s.finish()
+    }
+
+    assert_eq!(calculate_hash(&set_1), calculate_hash(&set_1));
+    assert_eq!(calculate_hash(&set_1), calculate_hash(&set_2));
+    // Hashes are sensitive to slot
+    assert!(calculate_hash(&set_1) != calculate_hash(&set_3));
+    // Hashes are sensitive to element value
+    assert!(calculate_hash(&set_1) != calculate_hash(&set_4));
 }
