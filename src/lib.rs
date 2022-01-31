@@ -1,8 +1,8 @@
+#![doc = include_str!("../README.md")]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![forbid(missing_docs)]
 #![forbid(unsafe_code)]
 #![warn(clippy::doc_markdown)]
-#![doc = include_str!("../README.md")]
 #![cfg_attr(feature = "set_algebra", allow(incomplete_features))]
 #![cfg_attr(feature = "set_algebra", feature(generic_const_exprs))]
 
@@ -14,7 +14,6 @@ pub use map::{PetitMap, SuccesfulMapInsertion};
 mod set;
 pub use set::{PetitSet, SuccesfulSetInsertion};
 
-// #[cfg(serde)]
 mod serde;
 pub mod set_algebra;
 

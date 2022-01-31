@@ -6,3 +6,5 @@ book
 /target
 
 Cargo.lock
+
+petitset_serde_test/target/

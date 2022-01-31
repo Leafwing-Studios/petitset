@@ -1,8 +1,10 @@
 //! Implementations of the [`Serialize`] and [`Deserialize`] traits
+
+// This module is behind a feature flag: make sure to use `cargo build --all-features` to check that it compiles!
 use crate::{PetitMap, PetitSet};
 use core::marker::PhantomData;
 use serde::{
-    de::{MapAccess, SeqAccess, Visitor},
+    de::{SeqAccess, Visitor},
     ser::SerializeSeq,
     Deserialize, Serialize,
 };
