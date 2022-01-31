@@ -1,4 +1,5 @@
 //! A module for the [`PetitMap`] data structure
+
 use crate::CapacityError;
 use core::mem::swap;
 
@@ -24,7 +25,7 @@ use core::mem::swap;
 /// Keys are guaranteed to be unique.
 #[derive(Clone, Debug, Hash)]
 pub struct PetitMap<K, V, const CAP: usize> {
-    storage: [Option<(K, V)>; CAP],
+    pub(crate) storage: [Option<(K, V)>; CAP],
 }
 
 impl<K, V, const CAP: usize> Default for PetitMap<K, V, CAP> {
