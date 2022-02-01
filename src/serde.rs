@@ -1,4 +1,5 @@
 //! Implementations of the [`Serialize`] and [`Deserialize`] traits
+#![cfg(feature = "serde")]
 
 // This module is behind a feature flag: make sure to use `cargo build --all-features` to check that it compiles!
 use crate::{PetitMap, PetitSet};
