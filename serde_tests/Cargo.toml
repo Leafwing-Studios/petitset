@@ -1,0 +1,14 @@
+# Enabling features in tests is painful :(
+# https://github.com/rust-lang/cargo/issues/2911
+
+[package]
+name = "serde_tests"
+version = "0.0.0"
+edition = "2021"
+
+# This crate needs to be treated as entirely external to the parent workspace
+[workspace]
+
+[dependencies]
+ron = "0.7"
+petitset = {path = "..", features = ["serde"]}

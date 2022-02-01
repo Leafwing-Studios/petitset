@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         toolchain: [nightly]
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -30,14 +30,21 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           override: true
       - name: Build & run tests
-        run: cargo test --workspace --features set_algebra
+        run: cargo test --workspace --all_features
         env:
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: "-C debuginfo=0 -D warnings"
+            - name: Build & run tests
       - name: Ensure docs compile
         run: cargo doc --no-deps
         env:
           RUSTDOCFLAGS: -Dwarnings
+      - name: Run serde tests
+        run: (cd serde_tests && cargo test)
+        env:
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: "-C debuginfo=0 -D warnings"
+
 
   ci:
     runs-on: windows-latest

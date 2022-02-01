@@ -24,7 +24,7 @@ use crate::{map::SuccesfulMapInsertion, CapacityError};
 /// Entries in this structure are guaranteed to be unique.
 #[derive(Debug, Clone, Hash)]
 pub struct PetitSet<T, const CAP: usize> {
-    map: PetitMap<T, (), CAP>,
+    pub(crate) map: PetitMap<T, (), CAP>,
 }
 
 impl<T, const CAP: usize> Default for PetitSet<T, CAP> {
