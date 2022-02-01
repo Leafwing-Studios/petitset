@@ -34,7 +34,6 @@ jobs:
         env:
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: "-C debuginfo=0 -D warnings"
-            - name: Build & run tests
       - name: Ensure docs compile
         run: cargo doc --no-deps
         env:
