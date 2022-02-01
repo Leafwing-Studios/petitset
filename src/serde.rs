@@ -69,14 +69,19 @@ mod petitmap {
         where
             S: SeqAccess<'de>,
         {
-            let mut map = PetitMap::default();
+            let mut map: PetitMap<K, V, CAP> = PetitMap::default();
 
-            // While there are entries remaining in the input,
-            // add them into our map.
-            let mut i = 0;
-            while let Some((key, value)) = access.next_element()? {
-                map.insert_at(key, value, i);
-                i += 1;
+            for i in 0..CAP {
+                let next_element: Option<Option<(K, V)>> = access.next_element()?;
+
+                // Insert the next element found
+                if let Some(element) = next_element {
+                    map.storage[i] = element;
+                } else {
+                    // We have run out of items in the serialized format
+                    // before we ran out of capacity.
+                    break;
+                }
             }
 
             Ok(map)
@@ -107,7 +112,9 @@ mod petitset {
         }
     }
 
-    impl<'de, T: Deserialize<'de> + Eq, const CAP: usize> Deserialize<'de> for PetitSet<T, CAP> {
+    impl<'de, T: Deserialize<'de> + Eq + Clone, const CAP: usize> Deserialize<'de>
+        for PetitSet<T, CAP>
+    {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
             D: serde::Deserializer<'de>,
@@ -131,7 +138,7 @@ mod petitset {
 
     impl<'de, T, const CAP: usize> Visitor<'de> for PetitSetVisitor<T, CAP>
     where
-        T: Deserialize<'de> + Eq,
+        T: Deserialize<'de> + Eq + Clone,
     {
         type Value = PetitSet<T, CAP>;
 
@@ -144,14 +151,23 @@ mod petitset {
         where
             S: SeqAccess<'de>,
         {
-            let mut set = PetitSet::default();
+            let mut set: PetitSet<T, CAP> = PetitSet::default();
 
-            // While there are entries remaining in the input,
-            // add them into our map.
-            let mut i = 0;
-            while let Some(element) = access.next_element()? {
-                set.insert_at(element, i);
-                i += 1;
+            for i in 0..CAP {
+                let next_element: Option<Option<T>> = access.next_element()?;
+
+                // If another element was found in the serialized format
+                // process and insert it
+                if let Some(element) = next_element {
+                    set.map.storage[i] = match element {
+                        Some(e) => Some((e, ())),
+                        None => None,
+                    };
+                } else {
+                    // We have run out of items in the serialized format
+                    // before we ran out of capacity.
+                    break;
+                }
             }
 
             Ok(set)

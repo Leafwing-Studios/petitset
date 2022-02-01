@@ -87,3 +87,31 @@ fn serde_set_string() {
 
     assert_eq!(set, deserialized_set);
 }
+
+#[test]
+fn short_serde() {
+    let mut set: PetitSet<u32, 5> = PetitSet::new();
+    set.insert(5);
+    set.insert(4);
+    set.insert(1);
+    set.insert(3);
+
+    set.remove(&3);
+
+    let serialization_result = to_string(&set);
+    if let Err(serialization_error) = serialization_result {
+        panic!("{serialization_error}");
+    }
+
+    let intermediate_repr = serialization_result.unwrap();
+    dbg!(intermediate_repr.clone());
+
+    let deserialization_result = from_str(&intermediate_repr);
+    if let Err(deserialization_error) = deserialization_result {
+        panic!("{deserialization_error}");
+    }
+
+    let deserialized_set: PetitSet<u32, 5> = deserialization_result.unwrap();
+
+    assert_eq!(set, deserialized_set);
+}
