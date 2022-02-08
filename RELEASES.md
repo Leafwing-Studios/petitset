@@ -1,5 +1,9 @@
 # Release Notes
 
+## Version 0.2.1
+
+- unbroke stable support by renaming `thiserror` and `serde` feature flags to `thiserror_compat` and `serde_compat`
+
 ## Version 0.2
 
 - added a `std` feature, which is enabled when standard-library support is needed

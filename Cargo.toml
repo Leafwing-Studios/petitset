@@ -1,7 +1,7 @@
 [package]
 name = "petitset"
 description = "An ordered set data structure, optimized for stack-allocated storage of a tiny number of elements with a fixed cap."
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Leafwing Studios"]
 homepage = "https://leafwing-studios.com"
 repository = "https://github.com/leafwing-studios/petitset"
@@ -22,9 +22,9 @@ serde = { version = "1.0", optional = true }
 # Not intrinsically useful: enabling this will break no-std
 std = []
 # Implements the thiserror::Error and std::Error traits
-thiserror = ["dep:thiserror", "std"]
+thiserror_compat = ["thiserror", "std"]
 # Implements Serialize and Deserialize
-serde = ["dep:serde", "std"]
+serde_compat = ["serde", "std"]
 # Implements set algebra operations (union, intersection, difference and symmetric difference)
 # Works perfectly, but relies on the incomplete nightly feature `generic_const_exprs`
 set_algebra = []

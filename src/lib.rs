@@ -21,7 +21,7 @@ pub mod set_algebra;
 ///
 /// It contains the element that could not be inserted.
 #[derive(PartialEq, Eq, Clone, Copy)]
-#[cfg_attr(feature = "thiserror", derive(thiserror::Error))]
+#[cfg_attr(feature = "thiserror_compat", derive(thiserror::Error))]
 pub struct CapacityError<T>(pub T);
 
 impl<T> Debug for CapacityError<T> {
@@ -31,7 +31,7 @@ impl<T> Debug for CapacityError<T> {
     }
 }
 
-#[cfg(feature = "thiserror")]
+#[cfg(feature = "thiserror_compat")]
 impl<T> std::fmt::Display for CapacityError<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         self::Debug::fmt(self, f)
