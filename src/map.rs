@@ -365,7 +365,7 @@ impl<K: Eq, V, const CAP: usize> PetitMap<K, V, CAP> {
 
     /// Swaps the positions of `element_a` with the position of `element_b`
     ///
-    /// Returns true if both keys were found and succesfully swapped.
+    /// Returns true if both keys were found and successfully swapped.
     pub fn swap(&mut self, key_a: &K, key_b: &K) -> bool {
         if let (Some(index_a), Some(index_b)) = (self.find(key_a), self.find(key_b)) {
             self.swap_at(index_a, index_b);
