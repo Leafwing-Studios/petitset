@@ -174,7 +174,7 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
     /// This is either a [`SuccesfulSetInsertion`] or a [`CapacityError`].
     pub fn try_insert(&mut self, element: T) -> Result<SuccesfulSetInsertion, CapacityError<T>> {
         match self.map.try_insert(element, ()) {
-            Ok(sucess) => match sucess {
+            Ok(success) => match success {
                 SuccesfulMapInsertion::NovelKey(index) => {
                     Ok(SuccesfulSetInsertion::NovelElenent(index))
                 }
@@ -241,7 +241,7 @@ impl<T: Eq, const CAP: usize> PetitSet<T, CAP> {
 
     /// Swaps the positions of `element_a` with the position of `element_b`
     ///
-    /// Returns true if both elements were found and succesfully swapped.
+    /// Returns true if both elements were found and successfully swapped.
     pub fn swap(&mut self, element_a: &T, element_b: &T) -> bool {
         self.map.swap(element_a, element_b)
     }
