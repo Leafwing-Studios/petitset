@@ -140,12 +140,7 @@ impl<K, V, const CAP: usize> PetitMap<K, V, CAP> {
             return None;
         }
 
-        for i in cursor..CAP {
-            if self.storage[i].is_some() {
-                return Some(i);
-            }
-        }
-        None
+        (cursor..CAP).find(|&i| self.storage[i].is_some())
     }
 
     /// Returns the index of the next empty slot, if any
@@ -156,12 +151,7 @@ impl<K, V, const CAP: usize> PetitMap<K, V, CAP> {
             return None;
         }
 
-        for i in cursor..CAP {
-            if self.storage[i].is_none() {
-                return Some(i);
-            }
-        }
-        None
+        (cursor..CAP).find(|&i| self.storage[i].is_none())
     }
 
     /// Returns the current number of key-value pairs in the [`PetitMap`]
