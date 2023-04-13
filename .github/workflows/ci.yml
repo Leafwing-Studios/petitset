@@ -30,7 +30,7 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           override: true
       - name: Build & run tests
-        run: cargo test --workspace --all_features
+        run: cargo test --workspace --all-features
         env:
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: "-C debuginfo=0 -D warnings"
