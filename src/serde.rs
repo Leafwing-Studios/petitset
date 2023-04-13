@@ -159,10 +159,7 @@ mod petitset {
                 // If another element was found in the serialized format
                 // process and insert it
                 if let Some(element) = next_element {
-                    set.map.storage[i] = match element {
-                        Some(e) => Some((e, ())),
-                        None => None,
-                    };
+                    set.map.storage[i] = element.map(|e| (e, ()));
                 } else {
                     // We have run out of items in the serialized format
                     // before we ran out of capacity.
